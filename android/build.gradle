@@ -41,4 +41,5 @@ repositories {
 
 dependencies {
     compile 'com.facebook.react:react-native:+'
+    compile 'com.cielo.lio:order-manager:0.19.1'
 }

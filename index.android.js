@@ -1,21 +1,26 @@
 'use strict'
 
-import React, { Component } from 'react';
-import { NativeModules } from 'react-native'
-// name as defined via ReactContextBaseJavaModule's getName
+import { NativeModules, NativeEventEmitter } from 'react-native'
+const EventEmitter = new NativeEventEmitter(NativeModules.Lio || {});
 
-export default class ComunicationApps extends Component{
+export const LioEvent = {
+    LioServiceErrorReceived: 'LioServiceErrorReceived'
+};
 
-	static getProgress(){
-        NativeModules.ComunicationApps.getProgress();
-	}
+const Lio = {};
 
-	static setProgress(progress){
-		NativeModules.ComunicationApps.setProgress(progress);
-	}
-
-	render(){
-		return null;
-	}
+Lio.initializeLio = (clientID, accessToken) => {
+    return NativeModules.Lio.initializeLio(clientID, accessToken);
 }
+
+Lio.createDraftOrder = (orderId) => {
+    return NativeModules.Lio.createDraftOrder(orderId);
+}
+
+Lio.on = (event, callback) => {
+    return EventEmitter.addListener(event, callback);
+}
+
+export default Lio;
+export {};
 
