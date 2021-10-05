@@ -18,9 +18,7 @@
     "cielo"
   ],
   "scripts": {
-    "test": "jest",
-    "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "release": "release-it"
+    "test": "jest"
   },
   "husky": {
     "hooks": {
