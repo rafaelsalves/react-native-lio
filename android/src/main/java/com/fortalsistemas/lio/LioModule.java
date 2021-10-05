@@ -168,8 +168,8 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void requestPaymentCreditInstallment(String orderId, Integer amount, Integer installments) {
-        Log.d(TAG, "[requestPaymentCreditInstallment] VALOR:" + amount);
+    public void requestPaymentCreditInstallment(Integer amount, String orderId, Integer installments) {
+        Log.d(TAG, "[requestPaymentCreditInstallment] VALOR:" + amount + " ORDERID:" + orderId + " inst:" + installments);
         order = orderManager.createDraftOrder(orderId);
         order.addItem("sku", "ORDER", amount, 1, "unidade");
         orderManager.placeOrder(order);
@@ -184,7 +184,7 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void requestPaymentDebit(String orderId, Integer amount) {
+    public void requestPaymentDebit(Integer amount, String orderId) {
         Log.d(TAG, "[requestPaymentDebit] VALOR:" + amount);
         order = orderManager.createDraftOrder(orderId);
         order.addItem("sku", "ORDER", amount, 1, "unidade");

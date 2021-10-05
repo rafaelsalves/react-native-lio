@@ -29,12 +29,12 @@ const requestPaymentCrashCredit = (amount, orderId) => {
     return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId)
 }
 
-const requestPaymentCreditInstallment = (amount, orderId) => {
-    return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId)
+const requestPaymentCreditInstallment = (amount, orderId, installments) => {
+    return NativeModules.Lio.requestPaymentCreditInstallment(amount, orderId, installments)
 }
 
 const requestPaymentDebit = (amount, orderId) => {
-    return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId)
+    return NativeModules.Lio.requestPaymentDebit(amount, orderId)
 }
 
 Lio.createDraftOrder = (orderId) => {
