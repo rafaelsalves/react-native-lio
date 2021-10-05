@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import cielo.orders.domain.CheckoutRequest;
 import cielo.orders.domain.Credentials;
 import cielo.orders.domain.Order;
 import cielo.sdk.order.OrderManager;
@@ -47,7 +48,7 @@ public class LioModule extends ReactContextBaseJavaModule {
 
     public enum Events {
         ON_CHANGE_SERVICE_STATE("onChangeServiceState"),
-        ON_SERVICE_BOUND_ERROR("onServiceBoundError"),
+        ON_CHANGE_PAYMENT_STATE("onChangePaymentState"),
         ON_SERVICE_UNBOUND("onServiceUnbound");
 
         private final String mName;
@@ -117,40 +118,84 @@ public class LioModule extends ReactContextBaseJavaModule {
         paymentListener = new PaymentListener() {
             @Override
             public void onStart() {
-                WritableMap params = Arguments.createMap();
-                params.putString("status", "O pagamento começou.");
-                params.putInt("code", 0);
-                //sendEvent(getReactApplicationContext(), "LioOnPayment", params);
                 Log.d(TAG, "O pagamento começou.");
+                WritableMap stateService = Arguments.createMap();
+                stateService.putInt("paymentState", 0);
+                sendEvent(Events.ON_CHANGE_PAYMENT_STATE.toString(), stateService);
             }
 
             @Override
             public void onPayment(@NotNull Order order) {
-                Log.d(TAG, "Um pagamento foi realizado.");
-                WritableMap params = Arguments.createMap();
-                params.putString("status", "Um pagamento foi realizado.");
-                params.putInt("code", 1);
-                //sendEvent(getReactApplicationContext(), "LioOnPayment", params);
+                Log.d(TAG, "Um pagamento foi realizado");
+                WritableMap stateService = Arguments.createMap();
+                stateService.putInt("paymentState", 1);
+                sendEvent(Events.ON_CHANGE_PAYMENT_STATE.toString(), stateService);
             }
 
             @Override
             public void onCancel() {
-                Log.d(TAG, "A operação foi cancelada.");
-                WritableMap params = Arguments.createMap();
-                params.putString("status", "A operação foi cancelada.");
-                params.putInt("code", 2);
-                //sendEvent(getReactApplicationContext(), "LioOnPayment", params);
+                Log.d(TAG, "A operação foi cancelada");
+                WritableMap stateService = Arguments.createMap();
+                stateService.putInt("paymentState", 2);
+                sendEvent(Events.ON_CHANGE_PAYMENT_STATE.toString(), stateService);
             }
 
             @Override
             public void onError(@NotNull PaymentError paymentError) {
                 Log.d(TAG, "Houve um erro no pagamento.");
-                WritableMap params = Arguments.createMap();
-                params.putString("status", "Houve um erro no pagamento.");
-                params.putInt("code", 3);
-                //sendEvent(getReactApplicationContext(), "LioOnPayment", params);
+                WritableMap stateService = Arguments.createMap();
+                stateService.putInt("paymentState", 3);
+                sendEvent(Events.ON_CHANGE_PAYMENT_STATE.toString(), stateService);
             }
         };
+
+    }
+
+    @ReactMethod
+    public void requestPaymentCrashCredit(Integer amount, String orderId) {
+        Log.d(TAG, "[requestPaymentCrashCredit] VALOR:" + amount);
+        order = orderManager.createDraftOrder(orderId);
+        order.addItem("sku", "ORDER", amount, 1, "unidade");
+        orderManager.placeOrder(order);
+
+        CheckoutRequest checkoutRequest = new CheckoutRequest.Builder()
+                .orderId(order.getId())
+                .amount(amount)
+                .installments(1)
+                .paymentCode(PaymentCode.CREDITO_AVISTA)
+                .build();
+        this.orderManager.checkoutOrder(checkoutRequest, this.paymentListener);
+    }
+
+    @ReactMethod
+    public void requestPaymentCreditInstallment(String orderId, Integer amount, Integer installments) {
+        Log.d(TAG, "[requestPaymentCreditInstallment] VALOR:" + amount);
+        order = orderManager.createDraftOrder(orderId);
+        order.addItem("sku", "ORDER", amount, 1, "unidade");
+        orderManager.placeOrder(order);
+
+        CheckoutRequest checkoutRequest = new CheckoutRequest.Builder()
+                .orderId(order.getId())
+                .amount(amount)
+                .installments(installments)
+                .paymentCode(PaymentCode.CREDITO_PARCELADO_LOJA)
+                .build();
+        this.orderManager.checkoutOrder(checkoutRequest, this.paymentListener);
+    }
+
+    @ReactMethod
+    public void requestPaymentDebit(String orderId, Integer amount) {
+        Log.d(TAG, "[requestPaymentDebit] VALOR:" + amount);
+        order = orderManager.createDraftOrder(orderId);
+        order.addItem("sku", "ORDER", amount, 1, "unidade");
+        orderManager.placeOrder(order);
+
+        CheckoutRequest checkoutRequest = new CheckoutRequest.Builder()
+                .orderId(order.getId())
+                .amount(amount)
+                .paymentCode(PaymentCode.DEBITO_AVISTA)
+                .build();
+        this.orderManager.checkoutOrder(checkoutRequest, this.paymentListener);
     }
 
     @ReactMethod

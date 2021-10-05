@@ -3,8 +3,7 @@ const EventEmitter = new NativeEventEmitter(NativeModules.Lio || {});
 
 const LioEvents = {
     onChangeServiceState: 'onChangeServiceState',
-    LioServiceErrorReceived: 'LioServiceErrorReceived',
-    LioOnPayment: 'LioOnPayment'
+    onChangePaymentState: 'onChangePaymentState',
 };
 
 const ServiceState = {
@@ -13,10 +12,29 @@ const ServiceState = {
     INACTIVE: 2,
 }
 
+const PaymentState = {
+    START: 0,
+    DONE: 1,
+    CANCELLED: 2,
+    ERROR: 3,
+}
+
 let Lio = {};
 
 const setup = (clientID, accessToken) => {
     return NativeModules.Lio.setup(clientID, accessToken);
+}
+
+const requestPaymentCrashCredit = (amount, orderId) => {
+    return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId)
+}
+
+const requestPaymentCreditInstallment = (amount, orderId) => {
+    return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId)
+}
+
+const requestPaymentDebit = (amount, orderId) => {
+    return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId)
 }
 
 Lio.createDraftOrder = (orderId) => {
@@ -40,7 +58,9 @@ const addListener = (event, callback) => {
 }
 
 export default { 
-    Lio, setup,
-    addListener, LioEvents, ServiceState
+    Lio, setup, 
+    requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit,
+    addListener, LioEvents, 
+    ServiceState, PaymentState,
 }
 
