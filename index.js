@@ -1,17 +1,22 @@
-'use strict'
-
 import { NativeModules, NativeEventEmitter } from 'react-native'
 const EventEmitter = new NativeEventEmitter(NativeModules.Lio || {});
 
-export const LioEvent = {
+const LioEvents = {
+    onChangeServiceState: 'onChangeServiceState',
     LioServiceErrorReceived: 'LioServiceErrorReceived',
     LioOnPayment: 'LioOnPayment'
 };
 
-const Lio = {};
+const ServiceState = {
+    ACTIVE: 0,
+    ERROR: 1,
+    INACTIVE: 2,
+}
 
-Lio.initializeLio = (clientID, accessToken) => {
-    return NativeModules.Lio.initializeLio(clientID, accessToken);
+let Lio = {};
+
+const setup = (clientID, accessToken) => {
+    return NativeModules.Lio.setup(clientID, accessToken);
 }
 
 Lio.createDraftOrder = (orderId) => {
@@ -30,10 +35,12 @@ Lio.checkoutOrder = (value, paymentCode) => {
     return NativeModules.Lio.checkoutOrder(value, paymentCode);
 }
 
-Lio.on = (event, callback) => {
+const addListener = (event, callback) => {
     return EventEmitter.addListener(event, callback);
 }
 
-export default Lio;
-export {};
+export default { 
+    Lio, setup,
+    addListener, LioEvents, ServiceState
+}
 

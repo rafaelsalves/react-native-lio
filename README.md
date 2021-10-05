@@ -1,4 +1,4 @@
-## React Native Android Library Lio
+## REACT NATIVE LIO
 
 1. Pull from **GitHub**.
 2. Do `yarn add https://github.com/rafaelalvesengcomp/react-native-lio.git` in your main project.

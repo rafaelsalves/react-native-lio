@@ -1,27 +1,35 @@
 {
   "name": "react-native-lio",
-  "version": "0.0.1",
+  "version": "0.9.1",
   "author": "Rafael Alves",
   "private": false,
   "license": "Unlicense",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rafaelalvesengcomp/react-native-lio.git"
+    "url": "https://github.com/rafaelsalves/react-native-lio"
   },
   "bugs": {
-    "url": "https://github.com/rafaelalvesengcomp/react-native-lio/issues"
+    "url": "https://github.com/rafaelsalves/react-native-lio/issues"
   },
-  "homepage": "https://github.com/rafaelalvesengcomp/react-native-lio",
+  "homepage": "https://github.com/rafaelsalves/react-native-lio",
   "keywords": [
-    "react-native",
-    "android",
-    "library"
+    "react-native-lio",
+    "lio",
+    "cielo"
   ],
   "scripts": {
-    "start": "node node_modules/react-native/local-cli/cli.js start",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "release": "release-it"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-commit": "yarn lint"
+    }
   },
   "peerDependencies": {
-    "react-native": ">=0.38.0"
+    "react": "*",
+    "react-native": "*"
   }
 }

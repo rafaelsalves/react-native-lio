@@ -1,45 +1,60 @@
-import groovy.json.JsonSlurper
-
-def computeVersionName() {
-    // dynamically retrieve version from package.json
-    def slurper = new JsonSlurper()
-    def json = slurper.parse(file('../package.json'), "utf-8")
-    return json.version
-}
-
 buildscript {
-    repositories {
-        jcenter()
-    }
+    if (project == rootProject) {
+        repositories {
+            google()
+            jcenter()
+        }
 
-    dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        dependencies {
+            classpath 'com.android.tools.build:gradle:3.5.3'
+        }
     }
 }
 
 apply plugin: 'com.android.library'
 
-android {
-    compileSdkVersion 23
-    buildToolsVersion '27'
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
 
+android {
+    compileSdkVersion safeExtGet('Lio_compileSdkVersion', 29)
+    buildToolsVersion safeExtGet('Lio_buildToolsVersion', '29.0.2')
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 22
+        minSdkVersion safeExtGet('Lio_minSdkVersion', 16)
+        targetSdkVersion safeExtGet('Lio_targetSdkVersion', 29)
         versionCode 1
-        // get version name from package.json version
-        versionName computeVersionName()
+        versionName "1.0"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
     }
     lintOptions {
-        abortOnError false
+        disable 'GradleCompatible'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
 repositories {
-    mavenCentral()
+    mavenLocal()
+    maven {
+        // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+        url("$rootDir/../node_modules/react-native/android")
+    }
+    google()
+    jcenter()
 }
 
 dependencies {
-    compile 'com.facebook.react:react-native:+'
-    compile 'com.cielo.lio:order-manager:0.19.1'
+    //noinspection GradleDynamicVersion
+    implementation "com.facebook.react:react-native:+"  // From node_modules
+    implementation 'com.cielo.lio:order-manager:1.4.0'
+  implementation 'org.jetbrains:annotations:15.0'
 }
