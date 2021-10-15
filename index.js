@@ -21,8 +21,8 @@ const PaymentState = {
 
 let Lio = {};
 
-const setup = (clientID, accessToken) => {
-    return NativeModules.Lio.setup(clientID, accessToken);
+const setup = (clientID, accessToken, ec = null) => {
+    return NativeModules.Lio.setup(clientID, accessToken, ec);
 }
 
 const requestPaymentCrashCredit = (amount, orderId) => {
@@ -35,6 +35,10 @@ const requestPaymentCreditInstallment = (amount, orderId, installments) => {
 
 const requestPaymentDebit = (amount, orderId) => {
     return NativeModules.Lio.requestPaymentDebit(amount, orderId)
+}
+
+const getMachineInformation = () => {
+    return NativeModules.Lio.getMachineInformation()
 }
 
 Lio.createDraftOrder = (orderId) => {
@@ -58,7 +62,7 @@ const addListener = (event, callback) => {
 }
 
 export default { 
-    Lio, setup, 
+    Lio, setup, getMachineInformation,
     requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit,
     addListener, LioEvents, 
     ServiceState, PaymentState,

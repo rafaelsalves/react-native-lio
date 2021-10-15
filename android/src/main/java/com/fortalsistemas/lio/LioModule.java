@@ -1,6 +1,7 @@
 package com.fortalsistemas.lio;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -43,6 +44,8 @@ public class LioModule extends ReactContextBaseJavaModule {
 
     private String clientID = "";
     private String accessToken = "";
+    private String ec = null;
+    private boolean isSimulator = false;
     private Credentials credentials;
     private OrderManager orderManager;
     private Order order;
@@ -119,7 +122,7 @@ public class LioModule extends ReactContextBaseJavaModule {
                 WritableMap stateService = Arguments.createMap();
 
                 stateService.putInt("paymentState", 1);
-                stateService.putInt ("installments", installments);
+                stateService.putInt("installments", installments);
                 stateService.putString("product", product);
                 stateService.putString("brand", brand);
                 stateService.putString("nsu", nsu);
@@ -153,15 +156,23 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void setup(String clientID, String accessToken) {
+    public void setup(String clientID, String accessToken, String ec) {
         this.clientID = clientID;
         this.accessToken = accessToken;
+        this.ec = ec;
         this.paymentType = "";
         this.order = null;
         this.orderManager = null;
 
         credentials = new Credentials(this.clientID, this.accessToken);
         orderManager = new OrderManager(credentials, this.reactContext);
+
+        InfoManager infoManager = new InfoManager();
+        String logicNumber = infoManager.getSettings(this.reactContext).getLogicNumber();
+
+        if (logicNumber.equals("99999999-9")) {
+            isSimulator = true;
+        }
 
         ServiceBindListener serviceBindListener = new ServiceBindListener() {
             @Override
@@ -202,12 +213,26 @@ public class LioModule extends ReactContextBaseJavaModule {
         paymentType = "CreditCard";
 
 
-        CheckoutRequest checkoutRequest = new CheckoutRequest.Builder()
-                .orderId(order.getId())
-                .amount(amount)
-                .installments(1)
-                .paymentCode(PaymentCode.CREDITO_AVISTA)
-                .build();
+        CheckoutRequest checkoutRequest;
+
+        if (isSimulator || this.ec == null) {
+            checkoutRequest = new CheckoutRequest.Builder()
+                    .orderId(order.getId())
+                    .amount(amount)
+                    .installments(1)
+                    .paymentCode(PaymentCode.CREDITO_AVISTA)
+                    .build();
+        } else {
+            checkoutRequest = new CheckoutRequest.Builder()
+                    .orderId(order.getId())
+                    .amount(amount)
+                    .ec(this.ec)
+                    .installments(1)
+                    .paymentCode(PaymentCode.CREDITO_AVISTA)
+                    .build();
+        }
+
+
         this.orderManager.checkoutOrder(checkoutRequest, createPaymentListener());
     }
 
@@ -219,12 +244,25 @@ public class LioModule extends ReactContextBaseJavaModule {
         orderManager.placeOrder(order);
         paymentType = "CreditCard";
 
-        CheckoutRequest checkoutRequest = new CheckoutRequest.Builder()
-                .orderId(order.getId())
-                .amount(amount)
-                .installments(installments)
-                .paymentCode(PaymentCode.CREDITO_PARCELADO_LOJA)
-                .build();
+        CheckoutRequest checkoutRequest;
+
+        if (isSimulator || this.ec == null) {
+            checkoutRequest = new CheckoutRequest.Builder()
+                    .orderId(order.getId())
+                    .amount(amount)
+                    .installments(installments)
+                    .paymentCode(PaymentCode.CREDITO_PARCELADO_LOJA)
+                    .build();
+        } else {
+            checkoutRequest = new CheckoutRequest.Builder()
+                    .orderId(order.getId())
+                    .amount(amount)
+                    .ec(this.ec)
+                    .installments(installments)
+                    .paymentCode(PaymentCode.CREDITO_PARCELADO_LOJA)
+                    .build();
+        }
+
         this.orderManager.checkoutOrder(checkoutRequest, createPaymentListener());
     }
 
@@ -236,11 +274,23 @@ public class LioModule extends ReactContextBaseJavaModule {
         orderManager.placeOrder(order);
         paymentType = "DebitCard";
 
-        CheckoutRequest checkoutRequest = new CheckoutRequest.Builder()
-                .orderId(order.getId())
-                .amount(amount)
-                .paymentCode(PaymentCode.DEBITO_AVISTA)
-                .build();
+        CheckoutRequest checkoutRequest;
+
+        if (isSimulator || this.ec == null) {
+            checkoutRequest = new CheckoutRequest.Builder()
+                    .orderId(order.getId())
+                    .amount(amount)
+                    .paymentCode(PaymentCode.DEBITO_AVISTA)
+                    .build();
+        } else {
+            checkoutRequest = new CheckoutRequest.Builder()
+                    .orderId(order.getId())
+                    .amount(amount)
+                    .ec(this.ec)
+                    .paymentCode(PaymentCode.DEBITO_AVISTA)
+                    .build();
+        }
+
         this.orderManager.checkoutOrder(checkoutRequest, createPaymentListener());
     }
 
@@ -280,6 +330,19 @@ public class LioModule extends ReactContextBaseJavaModule {
             }
         }
 
+    }
+
+    @ReactMethod
+    public void getMachineInformation(Promise promise) {
+        InfoManager infoManager = new InfoManager();
+        String logicNumber = infoManager.getSettings(this.reactContext).getLogicNumber();
+        String merchantCode = infoManager.getSettings(this.reactContext).getMerchantCode();
+
+        WritableMap machineInformation = Arguments.createMap();
+        machineInformation.putString("logicNumber", logicNumber);
+        machineInformation.putString("merchantCode", merchantCode);
+
+        promise.resolve(machineInformation);
     }
 
     private void sendEvent(String eventName, @Nullable WritableMap params) {
