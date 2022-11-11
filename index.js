@@ -19,6 +19,11 @@ const PaymentState = {
     ERROR: 3,
 }
 
+const PaymentStatus = {
+    ACCEPTED: 1,
+    CANCELLED: 2,
+}
+
 let Lio = {};
 
 const setup = (clientID, accessToken, ec = null) => {
@@ -41,19 +46,23 @@ const getMachineInformation = () => {
     return NativeModules.Lio.getMachineInformation()
 }
 
-Lio.createDraftOrder = (orderId) => {
+const getOrderList = (pageSize = 30, page = 0) => {
+    return NativeModules.Lio.getOrderList(pageSize, page)
+}
+
+const createDraftOrder = (orderId) => {
     return NativeModules.Lio.createDraftOrder(orderId);
 }
 
-Lio.addItems = (items) => {
+const addItems = (items) => {
     return NativeModules.Lio.addItems(items);
 }
 
-Lio.placeOrder = () => {
+const placeOrder = () => {
     return NativeModules.Lio.placeOrder();
 }
 
-Lio.checkoutOrder = (value, paymentCode) => {
+const checkoutOrder = (value, paymentCode) => {
     return NativeModules.Lio.checkoutOrder(value, paymentCode);
 }
 
@@ -61,10 +70,10 @@ const addListener = (event, callback) => {
     return EventEmitter.addListener(event, callback);
 }
 
-export default { 
-    Lio, setup, getMachineInformation,
+export default {
+    Lio, setup, getMachineInformation, getOrderList, createDraftOrder,
+    addItems, placeOrder, checkoutOrder,
     requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit,
-    addListener, LioEvents, 
-    ServiceState, PaymentState,
+    addListener, LioEvents,
+    ServiceState, PaymentState, PaymentStatus,
 }
-

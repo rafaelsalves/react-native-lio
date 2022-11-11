@@ -1,12 +1,12 @@
 {
   "name": "react-native-lio",
-  "version": "0.9.1",
+  "version": "1.0.0",
   "author": "Rafael Alves",
   "private": false,
   "license": "Unlicense",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rafaelsalves/react-native-lio"
+    "url": "git+https://github.com/rafaelsalves/react-native-lio.git"
   },
   "bugs": {
     "url": "https://github.com/rafaelsalves/react-native-lio/issues"
@@ -29,5 +29,8 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
-  }
+  },
+  "description": "[![Version](https://img.shields.io/npm/v/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio) [![NPM](https://img.shields.io/npm/dm/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)",
+  "main": "index.js",
+  "devDependencies": {}
 }

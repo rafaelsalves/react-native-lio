@@ -13,6 +13,7 @@ import java.util.Map;
 
 import android.util.Log;
 
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
@@ -27,6 +28,7 @@ import org.json.JSONObject;
 import cielo.orders.domain.CheckoutRequest;
 import cielo.orders.domain.Credentials;
 import cielo.orders.domain.Order;
+import cielo.orders.domain.ResultOrders;
 import cielo.sdk.info.InfoManager;
 import cielo.sdk.order.OrderManager;
 import cielo.sdk.order.ServiceBindListener;
@@ -98,6 +100,8 @@ public class LioModule extends ReactContextBaseJavaModule {
             @Override
             public void onPayment(@NotNull Order order) {
                 Log.d(TAG, "Um pagamento foi realizado");
+                order.markAsPaid();
+                orderManager.updateOrder(order);
                 List<Payment> payments = order.getPayments();
                 Iterator<Payment> paymentsIterator = payments.iterator();
                 InfoManager infoManager = new InfoManager();
@@ -343,6 +347,54 @@ public class LioModule extends ReactContextBaseJavaModule {
         machineInformation.putString("merchantCode", merchantCode);
 
         promise.resolve(machineInformation);
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap getOrderList(int pageSize, int page) {
+        ResultOrders orders = this.orderManager.retrieveOrders(pageSize, page);
+        WritableMap orderList = Arguments.createMap();
+
+        if (orders == null) {
+            return orderList;
+        }
+
+        List<Order> resultOrders = orders.getResults();
+
+        WritableArray orderArray = Arguments.createArray();
+
+        for (Order order : resultOrders) {
+            WritableMap orderItem = Arguments.createMap();
+            orderItem.putString("id", order.getId());
+            orderItem.putDouble("paidAmount", order.getPaidAmount());
+            orderItem.putString("createdAt", order.getCreatedAt().toString());
+
+            WritableArray paymentsArray = Arguments.createArray();
+            List<Payment> paymentsOfOrder = order.getPayments();
+
+            for (Payment payment : paymentsOfOrder) {
+                WritableMap paymentItem = Arguments.createMap();
+                paymentItem.putString("id", payment.getId());
+                paymentItem.putString("brand", payment.getBrand());
+                paymentItem.putDouble("amount", payment.getAmount());
+                paymentItem.putDouble("installments", payment.getInstallments());
+                paymentItem.putString("authCode", payment.getAuthCode());
+                paymentItem.putString("primaryCode", payment.getPrimaryCode());
+                paymentItem.putString("statusCode", payment.getPaymentFields().get("statusCode"));
+                paymentItem.putString("v40Code", payment.getPaymentFields().get("v40Code"));
+                paymentItem.putString("primaryProductName", payment.getPaymentFields().get("primaryProductName"));
+                paymentItem.putString("secondaryProductName", payment.getPaymentFields().get("secondaryProductName"));
+                paymentItem.putString("nsu", payment.getCieloCode());
+                paymentItem.putString("numberOfQuotas", payment.getPaymentFields().get("numberOfQuotas"));
+
+                paymentsArray.pushMap(paymentItem);
+            }
+            orderItem.putArray("payments", paymentsArray);
+
+            orderArray.pushMap(orderItem);
+        }
+
+        orderList.putArray("orderList", orderArray);
+        return orderList;
     }
 
     private void sendEvent(String eventName, @Nullable WritableMap params) {
