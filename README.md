@@ -80,6 +80,16 @@ Add items to order.
 
 ### checkoutOrder()
 
+### printText(text, style)
+Print one line text using machine printter.
+* text: texto to print;
+* style: style of text;
+
+
+### printImage(encodedImage, style = {})
+Print an image using machine printter.
+* encodedImage: Image encoded with base64 to print;
+* style: style of image;
 
 ### addListener()
 

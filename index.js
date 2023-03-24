@@ -24,6 +24,21 @@ const PaymentStatus = {
     CANCELLED: 2,
 }
 
+const PrintStyles = {
+    KEY_ALIGN: "key_attributes_align",
+    KEY_TEXT_SIZE: "key_attributes_textsize",
+    KEY_TYPEFACE: "key_attributes_typeface",
+    KEY_MARGIN_LEFT: "key_attributes_marginleft",
+    KEY_MARGIN_RIGHT: "key_attributes_marginright",
+    KEY_MARGIN_TOP: "key_attributes_margintop",
+    KEY_MARGIN_BOTTOM: "key_attributes_marginbottom",
+    KEY_LINE_SPACE: "key_attributes_linespace",
+    KEY_WEIGHT: "key_attributes_weight",
+    VAL_ALIGN_CENTER: 0,
+    VAL_ALIGN_LEFT: 1,
+    VAL_ALIGN_RIGHT: 2,
+}
+
 let Lio = {};
 
 const setup = (clientID, accessToken, ec = null) => {
@@ -66,14 +81,26 @@ const checkoutOrder = (value, paymentCode) => {
     return NativeModules.Lio.checkoutOrder(value, paymentCode);
 }
 
+const printText = (textToPrint, style = {}) => {
+    return NativeModules.Lio.printText(textToPrint, style)
+}
+
+const printImage = (encodedImage, style = {}) => {
+    return NativeModules.Lio.printImage(encodedImage, style)
+}
+
+const unbind = () => {
+    return NativeModules.Lio.unbind()
+}
+
 const addListener = (event, callback) => {
     return EventEmitter.addListener(event, callback);
 }
 
 export default {
     Lio, setup, getMachineInformation, getOrderList, createDraftOrder,
-    addItems, placeOrder, checkoutOrder,
+    addItems, placeOrder, checkoutOrder, printText, printImage, unbind,
     requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit,
     addListener, LioEvents,
-    ServiceState, PaymentState, PaymentStatus,
+    ServiceState, PaymentState, PaymentStatus, PrintStyles,
 }
