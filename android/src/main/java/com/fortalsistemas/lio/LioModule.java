@@ -13,7 +13,6 @@ import java.util.Map;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.util.Base64;
 import android.util.Log;
 
@@ -29,15 +28,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import cielo.orders.domain.CancellationRequest;
 import cielo.orders.domain.CheckoutRequest;
 import cielo.orders.domain.Credentials;
 import cielo.orders.domain.Order;
-import cielo.orders.domain.PrinterAttributes;
 import cielo.orders.domain.ResultOrders;
 import cielo.sdk.info.InfoManager;
 import cielo.sdk.order.OrderManager;
 import cielo.sdk.order.PrinterListener;
 import cielo.sdk.order.ServiceBindListener;
+import cielo.sdk.order.cancellation.CancellationListener;
 import cielo.sdk.order.payment.Payment;
 import cielo.sdk.order.payment.PaymentCode;
 import cielo.sdk.order.payment.PaymentError;
@@ -64,6 +64,7 @@ public class LioModule extends ReactContextBaseJavaModule {
     public enum Events {
         ON_CHANGE_SERVICE_STATE("onChangeServiceState"),
         ON_CHANGE_PAYMENT_STATE("onChangePaymentState"),
+        ON_CHANGE_CANCELLATION_STATE("onChangeCancellationState"),
         ON_SERVICE_UNBOUND("onServiceUnbound"),
         ON_CHANGE_PRINTER_STATE("onChangePrinterState");
 
@@ -114,6 +115,7 @@ public class LioModule extends ReactContextBaseJavaModule {
                 Iterator<Payment> paymentsIterator = payments.iterator();
                 InfoManager infoManager = new InfoManager();
 
+                double amount = 0.0;
                 Integer installments = 1;
                 String product = paymentType;
                 String brand = "";
@@ -122,8 +124,10 @@ public class LioModule extends ReactContextBaseJavaModule {
                 String authorizationDate = "";
                 String logicNumber = "";
 
+
                 Payment payment = order.getPayments().get(0);
 
+                amount = order.getPaidAmount();
                 installments = Math.toIntExact(payment.getInstallments());
                 brand = payment.getBrand();
                 nsu = payment.getCieloCode();
@@ -134,6 +138,7 @@ public class LioModule extends ReactContextBaseJavaModule {
                 WritableMap stateService = Arguments.createMap();
 
                 stateService.putInt("paymentState", 1);
+                stateService.putInt("amount", (int) amount);
                 stateService.putInt("installments", installments);
                 stateService.putString("product", product);
                 stateService.putString("brand", brand);
@@ -165,6 +170,36 @@ public class LioModule extends ReactContextBaseJavaModule {
         };
 
         return paymentListener;
+    }
+
+    private CancellationListener createCancellationListener() {
+        CancellationListener cancellationListener = new CancellationListener() {
+            @Override
+            public void onSuccess(Order cancelledOrder) {
+                Log.d(TAG, "O pagamento foi cancelado.");
+                WritableMap cancellationState = Arguments.createMap();
+                cancellationState.putInt("cancellationState", 1);
+                sendEvent(Events.ON_CHANGE_CANCELLATION_STATE.toString(), cancellationState);
+            }
+
+            @Override
+            public void onCancel() {
+                Log.d(TAG, "O cancelamento foi abortado.");
+                WritableMap cancellationState = Arguments.createMap();
+                cancellationState.putInt("cancellationState", 2);
+                sendEvent(Events.ON_CHANGE_CANCELLATION_STATE.toString(), cancellationState);
+            }
+
+            @Override
+            public void onError(PaymentError paymentError) {
+                Log.d(TAG,"Houve um erro no cancelamento");
+                WritableMap cancellationState = Arguments.createMap();
+                cancellationState.putInt("cancellationState", 3);
+                sendEvent(Events.ON_CHANGE_CANCELLATION_STATE.toString(), cancellationState);
+            }
+        };
+
+        return cancellationListener;
     }
 
     @ReactMethod
@@ -307,6 +342,29 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void cancelPayment(String orderId, String authCode, String cieloCode, Integer amount) {
+        CancellationRequest request;
+        if (isSimulator || this.ec == null) {
+            request = new CancellationRequest.Builder()
+                    .orderId(orderId)
+                    .authCode(authCode)
+                    .cieloCode(cieloCode)
+                    .value(amount)
+                    .build();
+        } else {
+            request = new CancellationRequest.Builder()
+                    .orderId(orderId)
+                    .authCode(authCode)
+                    .cieloCode(cieloCode)
+                    .value(amount)
+                    .ec(this.ec)
+                    .build();
+        }
+
+        this.orderManager.cancelOrder(request, createCancellationListener());
+    }
+
+    @ReactMethod
     public void createDraftOrder(String orderId) {
         order = orderManager.createDraftOrder(orderId);
     }
@@ -381,6 +439,7 @@ public class LioModule extends ReactContextBaseJavaModule {
 
             for (Payment payment : paymentsOfOrder) {
                 WritableMap paymentItem = Arguments.createMap();
+                paymentItem.putString("orderId", order.getId());
                 paymentItem.putString("id", payment.getId());
                 paymentItem.putString("brand", payment.getBrand());
                 paymentItem.putDouble("amount", payment.getAmount());

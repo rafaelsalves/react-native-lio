@@ -3,6 +3,7 @@ const EventEmitter = new NativeEventEmitter(NativeModules.Lio || {});
 
 const LioEvents = {
     onChangeServiceState: 'onChangeServiceState',
+    onChangeCancellationState: 'onChangeCancellationState',
     onChangePaymentState: 'onChangePaymentState',
 };
 
@@ -16,6 +17,12 @@ const PaymentState = {
     START: 0,
     DONE: 1,
     CANCELLED: 2,
+    ERROR: 3,
+}
+
+const CancellationState = {
+    SUCCESS: 1,
+    ABORT: 2,
     ERROR: 3,
 }
 
@@ -55,6 +62,10 @@ const requestPaymentCreditInstallment = (amount, orderId, installments) => {
 
 const requestPaymentDebit = (amount, orderId) => {
     return NativeModules.Lio.requestPaymentDebit(amount, orderId)
+}
+
+const cancelPayment = (orderId, authCode, cieloCode, amount) => {
+    return NativeModules.Lio.cancelPayment(orderId, authCode, cieloCode, amount)
 }
 
 const getMachineInformation = () => {
@@ -100,7 +111,8 @@ const addListener = (event, callback) => {
 export default {
     Lio, setup, getMachineInformation, getOrderList, createDraftOrder,
     addItems, placeOrder, checkoutOrder, printText, printImage, unbind,
-    requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit,
+    requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit, cancelPayment,
     addListener, LioEvents,
-    ServiceState, PaymentState, PaymentStatus, PrintStyles,
+    ServiceState, PaymentState, PaymentStatus, CancellationState,
+    PrintStyles,
 }
