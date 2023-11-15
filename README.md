@@ -1,7 +1,7 @@
 [![Version](https://img.shields.io/npm/v/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)
 [![NPM](https://img.shields.io/npm/dm/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)
 
-`react-native-lio` provides support to Cielo LIO machine, using the methods more used, based https://developercielo.github.io/manual/cielo-lio
+`react-native-lio` fornece a integração de aplicações que usam React Native à máquina CIELO Lio, implementando os principais métodos usados, baseado na documentação https://developercielo.github.io/manual/cielo-lio
 
 - [Features](#features)
 - [Installation](#installation)
@@ -10,12 +10,13 @@
 - [Opening issues](#opening-issues)
 
 ## Features
-1. Supports basic operations of purchase using Cielo LIO. 
-2. Provides another auxiliar methods to get information about machine.
+1. Fornece as operações básicas de integração, compra e impressão usando Cielo LIO.
+2. Fornece outros métodos auxiliares para capturar informações e estados da máquina.
 
 ## Installation
-This package works Android only.
-1. Install library 
+Vale ressaltar que este pacote tem suporte apenas para Android, visto que é o SO utilizado pela LIO.
+
+1. Instale o pacote
 
    from npm
 
@@ -29,11 +30,30 @@ This package works Android only.
    yarn add react-native-lio
    ```
 
+2. Adicione ao final do arquivo /android/build.gradle
+```
+allprojects {
+   ...
+   repositories {
+      maven {
+        ...
+        jcenter()
+    }
+}
+``````
+
+3. Adicione ou altere no android/app/src/main/AndroidManifest.xml o allowBackup para true
+```
+android:allowBackup="true"
+```
+
 ## Supported react-native versions
 
 | react-native-lio | react-native |
 | ---------------- | ------------ |
-| 1.0.0            | >=0.64.5     |
+| 1.0.0            | <= 0.64.5    |
+| 1.0.1            | <= 0.64.5    |
+| 1.0.2            |  > 0.64.5    |
 
 ## API
 
@@ -104,13 +124,11 @@ If you have unexpected behavior, please create a clean project with the latest v
 react-native init CleanProject
 cd CleanProject/
 yarn add react-native-lio
-cd ios && pod install && cd ..
 ```
 
 Make a reproduction of the problem in `App.js`
 
 ```bash
-react-native run-ios
 react-native run-android
 ```
 
