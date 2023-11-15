@@ -13,16 +13,16 @@ buildscript {
 
 apply plugin: 'com.android.library'
 
-def safeExtGet(prop, fallback) {
-    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+def safeExtGet(prop) {
+    return rootProject.ext.get(prop)
 }
 
 android {
-    compileSdkVersion safeExtGet('Lio_compileSdkVersion', 29)
-    buildToolsVersion safeExtGet('Lio_buildToolsVersion', '29.0.2')
+    compileSdkVersion safeExtGet('compileSdkVersion')
+    buildToolsVersion safeExtGet('buildToolsVersion')
     defaultConfig {
-        minSdkVersion safeExtGet('Lio_minSdkVersion', 16)
-        targetSdkVersion safeExtGet('Lio_targetSdkVersion', 29)
+        minSdkVersion safeExtGet('minSdkVersion')
+        targetSdkVersion safeExtGet('targetSdkVersion')
         versionCode 1
         versionName "1.0"
 
@@ -56,5 +56,7 @@ dependencies {
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
     implementation 'com.cielo.lio:order-manager:1.4.0'
+    implementation "com.squareup.okhttp3:okhttp"
+    implementation "com.squareup.okhttp3:okhttp-bom:4.4.1"
     implementation 'org.jetbrains:annotations:15.0'
 }
