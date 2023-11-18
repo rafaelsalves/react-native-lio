@@ -35,7 +35,6 @@ Vale ressaltar que este pacote tem suporte apenas para Android, visto que é o S
 allprojects {
    ...
    repositories {
-      maven {
         ...
         jcenter()
     }
