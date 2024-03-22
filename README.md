@@ -38,6 +38,9 @@ allprojects {
       maven {
         ...
         jcenter()
+        maven {
+            url("$rootDir/../node_modules/react-native-lio/android/cielo-sdk")
+        }
     }
 }
 ``````
