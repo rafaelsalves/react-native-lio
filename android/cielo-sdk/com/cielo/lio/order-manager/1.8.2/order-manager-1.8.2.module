@@ -1,0 +1,153 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.cielo.lio",
+    "module": "order-manager",
+    "version": "1.8.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.5",
+      "buildId": "3yrmos3pw5b3fgx45lkgdrpuei"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.4.30"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "order-manager-1.8.2.aar",
+          "url": "order-manager-1.8.2.aar",
+          "size": 181774,
+          "sha512": "0c007ec8fc443cce4b9de0674deb05a831005fe27e62aac68410343d5db7ee87e088a91281b4b59d0be8caf56ea739ffbdb671d636aeec549e76610b1fb2086b",
+          "sha256": "f2a2ba6179901c38e074f6796542eae2394ac3e59ffe2234da3d99e20a5b0206",
+          "sha1": "36ab2244be2343416e0caa0faa02e8c52af0bccd",
+          "md5": "b25d4593c558d9b5c5fed984b22b80cc"
+        }
+      ]
+    },
+    {
+      "name": "releaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.4.30"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-android-extensions-runtime",
+          "version": {
+            "requires": "1.4.30"
+          }
+        },
+        {
+          "group": "cielo.printer.client",
+          "module": "printer-manager",
+          "version": {
+            "requires": "2.4.2"
+          }
+        },
+        {
+          "group": "com.squareup.retrofit2",
+          "module": "retrofit",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "com.squareup.retrofit2",
+          "module": "adapter-rxjava2",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "com.squareup.retrofit2",
+          "module": "converter-gson",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "com.google.code.gson",
+          "module": "gson",
+          "version": {
+            "requires": "2.8.0"
+          }
+        },
+        {
+          "group": "io.reactivex.rxjava2",
+          "module": "rxandroid",
+          "version": {
+            "requires": "2.0.1"
+          }
+        },
+        {
+          "group": "com.squareup.okhttp3",
+          "module": "logging-interceptor",
+          "version": {
+            "requires": "3.12.1"
+          }
+        },
+        {
+          "group": "com.squareup.okhttp3",
+          "module": "okhttp",
+          "version": {
+            "requires": "3.12.1"
+          },
+          "excludes": [
+            {
+              "group": "com.squareup.okio",
+              "module": "okio"
+            }
+          ]
+        },
+        {
+          "group": "com.google.android.gms",
+          "module": "play-services-analytics",
+          "version": {
+            "requires": "18.0.3"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "order-manager-1.8.2.aar",
+          "url": "order-manager-1.8.2.aar",
+          "size": 181774,
+          "sha512": "0c007ec8fc443cce4b9de0674deb05a831005fe27e62aac68410343d5db7ee87e088a91281b4b59d0be8caf56ea739ffbdb671d636aeec549e76610b1fb2086b",
+          "sha256": "f2a2ba6179901c38e074f6796542eae2394ac3e59ffe2234da3d99e20a5b0206",
+          "sha1": "36ab2244be2343416e0caa0faa02e8c52af0bccd",
+          "md5": "b25d4593c558d9b5c5fed984b22b80cc"
+        }
+      ]
+    }
+  ]
+}
