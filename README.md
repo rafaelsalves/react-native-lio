@@ -1,36 +1,47 @@
+# React Native Lio Integration
+
 [![Version](https://img.shields.io/npm/v/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)
-[![NPM](https://img.shields.io/npm/dm/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)
 
-`react-native-lio` fornece a integração de aplicações que usam React Native à máquina CIELO Lio, implementando os principais métodos usados, baseado na documentação https://developercielo.github.io/manual/cielo-lio
+[![NPM Downloads](https://img.shields.io/npm/dm/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)
 
+The `react-native-lio` library enables integration of React Native applications with the CIELO Lio device, incorporating key methods based on the [official CIELO Lio documentation](https://developercielo.github.io/manual/cielo-lio).
+
+## Supported react-native versions
+
+| react-native-lio | react-native |
+| ---------------- | ------------ |
+| 1.0.0            | <= 0.64.5    |
+| 1.0.1            | <= 0.64.5    |
+| 1.0.2+            |  > 0.64.5    |
+
+## Table of Contents
 - [Features](#features)
 - [Installation](#installation)
 - [API](#api)
 - [Troubleshooting](#troubleshooting)
-- [Opening issues](#opening-issues)
+- [Opening Issues](#opening-issues)
 
 ## Features
-1. Fornece as operações básicas de integração, compra e impressão usando Cielo LIO.
-2. Fornece outros métodos auxiliares para capturar informações e estados da máquina.
+
+1. Supports basic operations such as integration, purchase, and printing using Cielo LIO.
+2. Provides additional helper methods for capturing information and states from the device.
 
 ## Installation
-Vale ressaltar que este pacote tem suporte apenas para Android, visto que é o SO utilizado pela LIO.
 
-1. Instale o pacote
+Note: This package is only supported on Android, as it is the operating system used by LIO.
 
-   from npm
+1. **Install the package**
 
    ```bash
    npm install react-native-lio
-   ```
-
-   from yarn
+    ```
+    or
 
    ```bash
    yarn add react-native-lio
    ```
 
-2. Adicione ao final do arquivo /android/build.gradle
+2. Add on end of file: **/android/build.gradle**
 ```
 allprojects {
    ...
@@ -45,76 +56,105 @@ allprojects {
 }
 ``````
 
-3. Adicione ou altere no android/app/src/main/AndroidManifest.xml o allowBackup para true
+3. Add or update the **allowBackup** on file: **android/app/src/main/AndroidManifest.xml**
+
 ```
 android:allowBackup="true"
 ```
 
-## Supported react-native versions
-
-| react-native-lio | react-native |
-| ---------------- | ------------ |
-| 1.0.0            | <= 0.64.5    |
-| 1.0.1            | <= 0.64.5    |
-| 1.0.2            |  > 0.64.5    |
-
 ## API
 
-### - setup(clientID, accessToken, ec)
+### - setup(clientID: string, accessToken: string, EC: string)
 
-Load library with client ID, accessToken and ec.
+**Description**: Load library with client ID, accessToken and EC.
+
+**Params**:
 * Client-Id Access identification. It's generation takes place at the time of creation by the developer panel. Its value can be viewed in the Client ID column, within the ‘Client ID Registered’ menu;
 * Access-Token Access token identification, which stores the access rules allowed to the Client ID. Its generation takes place when the Client ID is created by the developer panel. It's value can be viewed by clicking on 'details' in the 'Access Tokens' column, within the 'Client ID Registered' menu;
 * Ec is an client code;
 
-### - requestPaymentCrashCredit(amount, orderId)
-Request payment with credit on sight. 
-*amout, value to pay;
-*orderId, order number to transaction;
+### - requestPaymentCrashCredit(amount: number, orderId: string)
+**Description**: Request payment with credit on sight.
 
-### requestPaymentCreditInstallment(amount, orderId, installments)
-Request payment with credit in installments. 
-*amout, value to pay;
-*orderId, order number to transaction;
-*installments, number of installments
+**Params**:
+* amount: value to pay;
+* orderId: order number to transaction;
 
-### requestPaymentDebit(amount, orderId)
-Request payment with credit on sight. 
-*amout, value to pay;
-*orderId, order number to transaction;
+### - requestPaymentCreditInstallment(amount: number, orderId: string, installments: number)
+**Description**: Request payment with credit in installments. 
 
-### getMachineInformation()
-Gets the machine informations.
+**Params**:
+* amount: value to pay;
+* orderId: order number to transaction;
+* installments: number of installments
 
-### getOrderList()
+### - requestPaymentDebit(amount: number, orderId: string)
+**Description**:  Request payment with credit on sight. 
 
-Gets order list.
+**Params**:
+* amout: value to pay;
+* orderId: order number to transaction;
 
-### createDraftOrder()
+### - getMachineInformation()
+**Description**: Gets the machine informations.
 
-Creats a draft order.
+### - getOrderList()
 
-### addItems()
+**Description**: Gets order list.
 
-Add items to order.
+### - createDraftOrder()
 
-### placeOrder()
+**Description**: Creats a draft order.
+
+### - addItems()
+
+**Description**: Add items to order.
+
+### - placeOrder()
 
 
-### checkoutOrder()
+### - checkoutOrder()
 
-### printText(text, style)
-Print one line text using machine printter.
+### - printText(text: string, style: Record< string, number >)
+**Description**: Print one line text using machine printter.
+
+**Params**:
 * text: texto to print;
 * style: style of text;
 
+**Sample**:
+```javascript
+ {
+ 'key_attributes_align': Lio.PrintStyles.VAL_ALIGN_LEFT,
+ 'key_attributes_textsize': 22,
+ 'key_attributes_marginleft': 22,
+ }
+```
 
-### printImage(encodedImage, style = {})
-Print an image using machine printter.
+**Style Options**:
+
+| Key  | Possible Values  |
+| ------------ | ------------ |
+| "key_attributes_align"  |  0 => Center, 1 => Left, 2 => Right |
+|  "key_attributes_textsize" | number in pixel starting from 0  |
+|  "key_attributes_typeface" | number in pixel starting from 0  |
+|  "key_attributes_marginleft" | number in pixel starting from 0  |
+|  "key_attributes_marginright" | number in pixel starting from 0  |
+|  "key_attributes_margintop" | number in pixel starting from 0  |
+|  "key_attributes_marginbottom" |  number in pixel starting from 0 |
+|  "key_attributes_linespace" |  number in pixel starting from 0 |
+|  "key_attributes_weight" | 0 or 1  |
+
+
+
+### - printImage(encodedImage: string, style = {})
+**Description**: Print an image using machine printter.
+
+**Params**:
 * encodedImage: Image encoded with base64 to print;
 * style: style of image;
 
-### addListener()
+### - addListener()
 
 
 ## Troubleshooting
