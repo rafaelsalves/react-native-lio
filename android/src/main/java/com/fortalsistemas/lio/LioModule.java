@@ -55,6 +55,7 @@ public class LioModule extends ReactContextBaseJavaModule {
     private String accessToken = "";
     private String ec = null;
     private boolean isSimulator = false;
+    private boolean isReady = false;
     private Credentials credentials;
     private OrderManager orderManager;
     private Order order;
@@ -127,17 +128,18 @@ public class LioModule extends ReactContextBaseJavaModule {
 
                 Payment payment = order.getPayments().get(0);
 
-                amount = order.getPaidAmount();
+                amount = payment.getAmount();
                 installments = Math.toIntExact(payment.getInstallments());
                 brand = payment.getBrand();
                 nsu = payment.getCieloCode();
                 authorizationCode = payment.getAuthCode();
-                authorizationDate = payment.getRequestDate();
+                authorizationDate = order.getCreatedAt().toString();
                 logicNumber = infoManager.getSettings(reactContext).getLogicNumber();
 
                 WritableMap stateService = Arguments.createMap();
 
                 stateService.putInt("paymentState", 1);
+                stateService.putString("orderId", order.getId());
                 stateService.putInt("amount", (int) amount);
                 stateService.putInt("installments", installments);
                 stateService.putString("product", product);
@@ -148,8 +150,6 @@ public class LioModule extends ReactContextBaseJavaModule {
                 stateService.putString("logicNumber", logicNumber);
 
                 sendEvent(Events.ON_CHANGE_PAYMENT_STATE.toString(), stateService);
-
-                orderManager.unbind();
             }
 
             @Override
@@ -210,6 +210,7 @@ public class LioModule extends ReactContextBaseJavaModule {
         this.paymentType = "";
         this.order = null;
         this.orderManager = null;
+        this.isReady = false;
 
         credentials = new Credentials(this.clientID, this.accessToken);
         orderManager = new OrderManager(credentials, this.reactContext);
@@ -228,14 +229,16 @@ public class LioModule extends ReactContextBaseJavaModule {
                 WritableMap stateService = Arguments.createMap();
                 stateService.putInt("stateService", STATE_SERVICE_ACTIVE);
                 sendEvent(Events.ON_CHANGE_SERVICE_STATE.toString(), stateService);
+                isReady = true;
             }
 
             @Override
             public void onServiceBoundError(Throwable throwable) {
-                Log.d(TAG, "O serviço foi desvinculado");
+                Log.d(TAG, "Houve um erro ao conectar ao Serviço CIELO");
                 WritableMap stateService = Arguments.createMap();
                 stateService.putInt("stateService", STATE_SERVICE_ERROR);
                 sendEvent(Events.ON_CHANGE_SERVICE_STATE.toString(), stateService);
+                isReady = false;
             }
 
             @Override
@@ -244,6 +247,7 @@ public class LioModule extends ReactContextBaseJavaModule {
                 WritableMap stateService = Arguments.createMap();
                 stateService.putInt("stateService", STATE_SERVICE_INACTIVE);
                 sendEvent(Events.ON_CHANGE_SERVICE_STATE.toString(), stateService);
+                isReady = false;
             }
         };
 
@@ -252,10 +256,11 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void requestPaymentCrashCredit(Integer amount, String orderId) {
+    public void requestPaymentCrashCredit(Integer amount, String orderId, String notes) {
         Log.d(TAG, "[requestPaymentCrashCredit] VALOR:" + amount);
         order = orderManager.createDraftOrder(orderId);
         order.addItem("sku", "ORDER", amount, 1, "unidade");
+        order.setNotes(notes);
         orderManager.placeOrder(order);
         paymentType = "CreditCard";
 
@@ -284,10 +289,11 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void requestPaymentCreditInstallment(Integer amount, String orderId, Integer installments) {
+    public void requestPaymentCreditInstallment(Integer amount, String orderId, Integer installments, String notes) {
         Log.d(TAG, "[requestPaymentCreditInstallment] VALOR:" + amount + " ORDERID:" + orderId + " inst:" + installments);
         order = orderManager.createDraftOrder(orderId);
         order.addItem("sku", "ORDER", amount, 1, "unidade");
+        order.setNotes(notes);
         orderManager.placeOrder(order);
         paymentType = "CreditCard";
 
@@ -314,10 +320,11 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void requestPaymentDebit(Integer amount, String orderId) {
+    public void requestPaymentDebit(Integer amount, String orderId, String notes) {
         Log.d(TAG, "[requestPaymentDebit] VALOR:" + amount);
         order = orderManager.createDraftOrder(orderId);
         order.addItem("sku", "ORDER", amount, 1, "unidade");
+        order.setNotes(notes);
         orderManager.placeOrder(order);
         paymentType = "DebitCard";
 
@@ -402,6 +409,48 @@ public class LioModule extends ReactContextBaseJavaModule {
 
     }
 
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public void setOrderNotes(String orderId, String notes){
+        try {
+            int currentPage = 0;
+            int PAGE_SIZE = 100;
+
+            boolean hasFoundOrder = false;
+            Log.d(TAG, "[setOrderNotes] Começando");
+            while (true) {
+                ResultOrders orders = this.orderManager.retrieveOrders(PAGE_SIZE, currentPage);
+                if (orders == null) {
+                    Log.d(TAG, "[setOrderNotes] Não existem orders");
+                    break;
+                }
+                Log.d(TAG, "[setOrderNotes] Existem orders");
+                List<Order> resultOrders = orders.getResults();
+                for (Order orderIt : resultOrders) {
+                    Log.d(TAG, "[setOrderNotes] Comparando: " + orderIt.getId() + ", " + orderId);
+                    if(orderIt.getId().equals(orderId)) {
+                        orderIt.setNotes(notes);
+                        this.orderManager.updateOrder(orderIt);
+                        hasFoundOrder = true;
+                        Log.d(TAG, "[setOrderNotes] achou: " + orderIt.getNotes() + "," + orderIt.toString());
+                        break;
+                    }
+                }
+
+                if(resultOrders.size() < PAGE_SIZE || hasFoundOrder) {
+                    break;
+                }else {
+                    currentPage += 1;
+                }
+            }
+            if(!hasFoundOrder) {
+                Log.d(TAG, "[setOrderNotes] Não encontrado");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d(TAG, "[setOrderNotes] Problema ao atualizar notas do pedido :" + orderId + ", notes:" + notes);
+        }
+    }
+
     @ReactMethod
     public void getMachineInformation(Promise promise) {
         InfoManager infoManager = new InfoManager();
@@ -411,8 +460,78 @@ public class LioModule extends ReactContextBaseJavaModule {
         WritableMap machineInformation = Arguments.createMap();
         machineInformation.putString("logicNumber", logicNumber);
         machineInformation.putString("merchantCode", merchantCode);
+        machineInformation.putBoolean("isLoaded", this.isReady);
 
         promise.resolve(machineInformation);
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public Boolean getIsServiceConnected() {
+        return this.isReady;
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap getOrdersWithNotes() {
+        WritableMap orderList = Arguments.createMap();
+        int currentPage = 0;
+        int PAGE_SIZE = 100;
+        Log.d(TAG, "[getOrdersWithNotes] Obtendo pedidos com notas");
+        WritableArray orderArray = Arguments.createArray();
+        while (true) {
+            ResultOrders orders = this.orderManager.retrieveOrders(PAGE_SIZE, currentPage);
+            if (orders == null) {
+                break;
+            }
+            List<Order> resultOrders = orders.getResults();
+
+            for (Order order : resultOrders) {
+                String notes = order.getNotes();
+                if(notes.isEmpty()) {
+                    continue;
+                }
+                WritableMap orderItem = Arguments.createMap();
+                orderItem.putString("id", order.getId());
+                orderItem.putDouble("paidAmount", order.getPaidAmount());
+                orderItem.putString("createdAt", order.getCreatedAt().toString());
+                orderItem.putString("notes", notes);
+                WritableArray paymentsArray = Arguments.createArray();
+                List<Payment> paymentsOfOrder = order.getPayments();
+
+                for (Payment payment : paymentsOfOrder) {
+                    WritableMap paymentItem = Arguments.createMap();
+                    paymentItem.putString("orderId", order.getId());
+                    paymentItem.putString("id", payment.getId());
+                    paymentItem.putString("brand", payment.getBrand());
+                    paymentItem.putDouble("amount", payment.getAmount());
+                    paymentItem.putDouble("installments", payment.getInstallments());
+                    paymentItem.putString("authorizationCode", payment.getAuthCode());
+                    paymentItem.putString("primaryCode", payment.getPrimaryCode());
+                    paymentItem.putString("statusCode", payment.getPaymentFields().get("statusCode"));
+                    paymentItem.putString("v40Code", payment.getPaymentFields().get("v40Code"));
+                    paymentItem.putString("primaryProductName", payment.getPaymentFields().get("primaryProductName"));
+                    paymentItem.putString("secondaryProductName", payment.getPaymentFields().get("secondaryProductName"));
+                    paymentItem.putString("nsu", payment.getCieloCode());
+                    paymentItem.putString("numberOfQuotas", payment.getPaymentFields().get("numberOfQuotas"));
+                    paymentItem.putString("authorizationDate", order.getCreatedAt().toString());
+
+                    paymentsArray.pushMap(paymentItem);
+                }
+
+                orderItem.putArray("payments", paymentsArray);
+
+                orderArray.pushMap(orderItem);
+            }
+
+
+            if(resultOrders.size() < PAGE_SIZE) {
+                break;
+            }else {
+                currentPage += 1;
+            }
+
+        }
+        orderList.putArray("orderList", orderArray);
+        return orderList;
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
@@ -433,6 +552,7 @@ public class LioModule extends ReactContextBaseJavaModule {
             orderItem.putString("id", order.getId());
             orderItem.putDouble("paidAmount", order.getPaidAmount());
             orderItem.putString("createdAt", order.getCreatedAt().toString());
+            orderItem.putString("notes", order.getNotes());
 
             WritableArray paymentsArray = Arguments.createArray();
             List<Payment> paymentsOfOrder = order.getPayments();
@@ -524,7 +644,7 @@ public class LioModule extends ReactContextBaseJavaModule {
         printerManager.printImage(bitmapImage, getTextAlign(style), createPrinterListener());
     }
 
-    @ReactMethod
+    @ReactMethod(isBlockingSynchronousMethod = true)
     public void unbind() {
         this.orderManager.unbind();
     }

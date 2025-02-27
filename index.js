@@ -52,16 +52,16 @@ const setup = (clientID, accessToken, ec = null) => {
     return NativeModules.Lio.setup(clientID, accessToken, ec);
 }
 
-const requestPaymentCrashCredit = (amount, orderId) => {
-    return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId)
+const requestPaymentCrashCredit = (amount, orderId, notes = '') => {
+    return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId, notes)
 }
 
-const requestPaymentCreditInstallment = (amount, orderId, installments) => {
-    return NativeModules.Lio.requestPaymentCreditInstallment(amount, orderId, installments)
+const requestPaymentCreditInstallment = (amount, orderId, installments, notes = '') => {
+    return NativeModules.Lio.requestPaymentCreditInstallment(amount, orderId, installments, notes)
 }
 
-const requestPaymentDebit = (amount, orderId) => {
-    return NativeModules.Lio.requestPaymentDebit(amount, orderId)
+const requestPaymentDebit = (amount, orderId, notes = '') => {
+    return NativeModules.Lio.requestPaymentDebit(amount, orderId, notes)
 }
 
 const cancelPayment = (orderId, authCode, cieloCode, amount) => {
@@ -92,6 +92,18 @@ const checkoutOrder = (value, paymentCode) => {
     return NativeModules.Lio.checkoutOrder(value, paymentCode);
 }
 
+const setOrderNotes = (orderId, notes = '') => {
+    return NativeModules.Lio.setOrderNotes(orderId, notes)
+}
+
+const getOrdersWithNotes = () => {
+    return NativeModules.Lio.getOrdersWithNotes()
+}
+
+const getIsServiceConnected = () => {
+    return NativeModules.Lio.getIsServiceConnected()
+}
+
 const printText = (textToPrint, style = {}) => {
     return NativeModules.Lio.printText(textToPrint, style)
 }
@@ -109,8 +121,8 @@ const addListener = (event, callback) => {
 }
 
 export default {
-    Lio, setup, getMachineInformation, getOrderList, createDraftOrder,
-    addItems, placeOrder, checkoutOrder, printText, printImage, unbind,
+    Lio, setup, getMachineInformation, getOrderList, createDraftOrder, setOrderNotes, getOrdersWithNotes,
+    addItems, placeOrder, checkoutOrder, printText, printImage, unbind, getIsServiceConnected,
     requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit, cancelPayment,
     addListener, LioEvents,
     ServiceState, PaymentState, PaymentStatus, CancellationState,

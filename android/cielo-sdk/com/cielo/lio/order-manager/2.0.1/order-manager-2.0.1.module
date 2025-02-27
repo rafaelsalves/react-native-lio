@@ -3,7 +3,7 @@
   "component": {
     "group": "com.cielo.lio",
     "module": "order-manager",
-    "version": "1.8.2",
+    "version": "2.0.1",
     "attributes": {
       "org.gradle.status": "release"
     }
@@ -11,7 +11,7 @@
   "createdBy": {
     "gradle": {
       "version": "6.5",
-      "buildId": "3yrmos3pw5b3fgx45lkgdrpuei"
+      "buildId": "zxlnu242gvd5rik3afjssx6uci"
     }
   },
   "variants": [
@@ -34,13 +34,13 @@
       ],
       "files": [
         {
-          "name": "order-manager-1.8.2.aar",
-          "url": "order-manager-1.8.2.aar",
-          "size": 181774,
-          "sha512": "0c007ec8fc443cce4b9de0674deb05a831005fe27e62aac68410343d5db7ee87e088a91281b4b59d0be8caf56ea739ffbdb671d636aeec549e76610b1fb2086b",
-          "sha256": "f2a2ba6179901c38e074f6796542eae2394ac3e59ffe2234da3d99e20a5b0206",
-          "sha1": "36ab2244be2343416e0caa0faa02e8c52af0bccd",
-          "md5": "b25d4593c558d9b5c5fed984b22b80cc"
+          "name": "order-manager-2.0.1.aar",
+          "url": "order-manager-2.0.1.aar",
+          "size": 219987,
+          "sha512": "dd9bd3e52470343ffb2f4d0b64211f335a7865a9ddacbb1d8e24b3cd4618c7719510f213c97aea4fb7bf021cbf31a5128f32d12bd15bc204ee906a9ba776e53d",
+          "sha256": "f97479ab76aaf5e5c62dbaa8859b25f7a166a6b7e924854dd7b417dafba4ce5e",
+          "sha1": "6e160bcd0e40ea94ea1865b6f40c15b8e39c8308",
+          "md5": "7dd8f897831d8310ec2f1c93c3cf6523"
         }
       ]
     },
@@ -65,13 +65,6 @@
           "module": "kotlin-android-extensions-runtime",
           "version": {
             "requires": "1.4.30"
-          }
-        },
-        {
-          "group": "cielo.printer.client",
-          "module": "printer-manager",
-          "version": {
-            "requires": "2.4.2"
           }
         },
         {
@@ -135,17 +128,24 @@
           "version": {
             "requires": "18.0.3"
           }
+        },
+        {
+          "group": "com.datadoghq",
+          "module": "dd-sdk-android",
+          "version": {
+            "requires": "1.11.0"
+          }
         }
       ],
       "files": [
         {
-          "name": "order-manager-1.8.2.aar",
-          "url": "order-manager-1.8.2.aar",
-          "size": 181774,
-          "sha512": "0c007ec8fc443cce4b9de0674deb05a831005fe27e62aac68410343d5db7ee87e088a91281b4b59d0be8caf56ea739ffbdb671d636aeec549e76610b1fb2086b",
-          "sha256": "f2a2ba6179901c38e074f6796542eae2394ac3e59ffe2234da3d99e20a5b0206",
-          "sha1": "36ab2244be2343416e0caa0faa02e8c52af0bccd",
-          "md5": "b25d4593c558d9b5c5fed984b22b80cc"
+          "name": "order-manager-2.0.1.aar",
+          "url": "order-manager-2.0.1.aar",
+          "size": 219987,
+          "sha512": "dd9bd3e52470343ffb2f4d0b64211f335a7865a9ddacbb1d8e24b3cd4618c7719510f213c97aea4fb7bf021cbf31a5128f32d12bd15bc204ee906a9ba776e53d",
+          "sha256": "f97479ab76aaf5e5c62dbaa8859b25f7a166a6b7e924854dd7b417dafba4ce5e",
+          "sha1": "6e160bcd0e40ea94ea1865b6f40c15b8e39c8308",
+          "md5": "7dd8f897831d8310ec2f1c93c3cf6523"
         }
       ]
     }

@@ -55,7 +55,7 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
-    implementation 'com.cielo.lio:order-manager:1.8.2'
+    implementation 'com.cielo.lio:order-manager:2.0.1'
     implementation "com.squareup.okhttp3:okhttp"
     implementation "com.squareup.okhttp3:okhttp-bom:4.4.1"
     implementation 'org.jetbrains:annotations:15.0'
