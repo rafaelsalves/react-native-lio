@@ -15,6 +15,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
@@ -43,6 +44,7 @@ import cielo.sdk.order.payment.PaymentCode;
 import cielo.sdk.order.payment.PaymentError;
 import cielo.sdk.order.payment.PaymentListener;
 import cielo.sdk.printer.PrinterManager;
+import cielo.sdk.mifare.Mifare;
 
 public class LioModule extends ReactContextBaseJavaModule {
     //CONSTANTS
@@ -61,13 +63,14 @@ public class LioModule extends ReactContextBaseJavaModule {
     private Order order;
     private ReactApplicationContext reactContext;
     private String paymentType = ""; //DebitCard or CreditCard
+    private Mifare mifare;
 
     public enum Events {
         ON_CHANGE_SERVICE_STATE("onChangeServiceState"),
         ON_CHANGE_PAYMENT_STATE("onChangePaymentState"),
         ON_CHANGE_CANCELLATION_STATE("onChangeCancellationState"),
-        ON_SERVICE_UNBOUND("onServiceUnbound"),
-        ON_CHANGE_PRINTER_STATE("onChangePrinterState");
+        ON_CHANGE_PRINTER_STATE("onChangePrinterState"),
+        ON_READ_NFC("onReadNFC");
 
         private final String mName;
 
@@ -113,7 +116,6 @@ public class LioModule extends ReactContextBaseJavaModule {
                 order.markAsPaid();
                 orderManager.updateOrder(order);
                 List<Payment> payments = order.getPayments();
-                Iterator<Payment> paymentsIterator = payments.iterator();
                 InfoManager infoManager = new InfoManager();
 
                 double amount = 0.0;
@@ -192,7 +194,7 @@ public class LioModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onError(PaymentError paymentError) {
-                Log.d(TAG,"Houve um erro no cancelamento");
+                Log.d(TAG, "Houve um erro no cancelamento");
                 WritableMap cancellationState = Arguments.createMap();
                 cancellationState.putInt("cancellationState", 3);
                 sendEvent(Events.ON_CHANGE_CANCELLATION_STATE.toString(), cancellationState);
@@ -410,7 +412,7 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public void setOrderNotes(String orderId, String notes){
+    public void setOrderNotes(String orderId, String notes) {
         try {
             int currentPage = 0;
             int PAGE_SIZE = 100;
@@ -427,7 +429,7 @@ public class LioModule extends ReactContextBaseJavaModule {
                 List<Order> resultOrders = orders.getResults();
                 for (Order orderIt : resultOrders) {
                     Log.d(TAG, "[setOrderNotes] Comparando: " + orderIt.getId() + ", " + orderId);
-                    if(orderIt.getId().equals(orderId)) {
+                    if (orderIt.getId().equals(orderId)) {
                         orderIt.setNotes(notes);
                         this.orderManager.updateOrder(orderIt);
                         hasFoundOrder = true;
@@ -436,13 +438,13 @@ public class LioModule extends ReactContextBaseJavaModule {
                     }
                 }
 
-                if(resultOrders.size() < PAGE_SIZE || hasFoundOrder) {
+                if (resultOrders.size() < PAGE_SIZE || hasFoundOrder) {
                     break;
-                }else {
+                } else {
                     currentPage += 1;
                 }
             }
-            if(!hasFoundOrder) {
+            if (!hasFoundOrder) {
                 Log.d(TAG, "[setOrderNotes] Não encontrado");
             }
         } catch (Exception e) {
@@ -486,7 +488,7 @@ public class LioModule extends ReactContextBaseJavaModule {
 
             for (Order order : resultOrders) {
                 String notes = order.getNotes();
-                if(notes.isEmpty()) {
+                if (notes.isEmpty()) {
                     continue;
                 }
                 WritableMap orderItem = Arguments.createMap();
@@ -523,9 +525,9 @@ public class LioModule extends ReactContextBaseJavaModule {
             }
 
 
-            if(resultOrders.size() < PAGE_SIZE) {
+            if (resultOrders.size() < PAGE_SIZE) {
                 break;
-            }else {
+            } else {
                 currentPage += 1;
             }
 
@@ -644,9 +646,39 @@ public class LioModule extends ReactContextBaseJavaModule {
         printerManager.printImage(bitmapImage, getTextAlign(style), createPrinterListener());
     }
 
+    @ReactMethod
+    public void readNFC() {
+        Log.d(TAG, "ACTIVE NFC");
+        WritableMap nfcData = Arguments.createMap();
+        try {
+            this.mifare = new Mifare(this.reactContext);
+            mifare.detect((response) -> {
+                if (response.getData() != null) {
+                    Toast.makeText(this.reactContext, "TAG: " + bytesToHex(response.getData()), Toast.LENGTH_SHORT).show();
+
+                    nfcData.putBoolean("status", true);
+                    nfcData.putString("cardId", bytesToHex(response.getData()));
+                    sendEvent(Events.ON_READ_NFC.toString(), nfcData);
+                }
+            });
+        } catch (Exception e) {
+            nfcData.putBoolean("status", false);
+            sendEvent(Events.ON_READ_NFC.toString(), nfcData);
+        }
+    }
+
+    @ReactMethod
+    public void deactivateNFC() {
+        if (this.mifare != null) {
+            this.mifare.deactivate(mifareResponse -> {
+            });
+        }
+    }
+
     @ReactMethod(isBlockingSynchronousMethod = true)
     public void unbind() {
         this.orderManager.unbind();
+        this.deactivateNFC();
     }
 
     private void sendEvent(String eventName, @Nullable WritableMap params) {
@@ -655,5 +687,16 @@ public class LioModule extends ReactContextBaseJavaModule {
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
 
+    }
+
+    /**
+     * Convert byte array to hexadecimal string (common format for NFC UID)
+     */
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            hexString.append(String.format("%02X", b));
+        }
+        return hexString.toString();
     }
 }

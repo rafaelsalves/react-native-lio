@@ -44,12 +44,10 @@ android {
 
 repositories {
     mavenLocal()
+
     maven {
-        // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
-        url("$rootDir/../node_modules/react-native/android")
+        url("$rootDir/../node_modules/react-native-lio/android/cielo-sdk")
     }
-    google()
-    jcenter()
 }
 
 dependencies {
@@ -57,6 +55,7 @@ dependencies {
     implementation "com.facebook.react:react-native:+"  // From node_modules
     implementation 'com.cielo.lio:order-manager:2.0.1'
     implementation "com.squareup.okhttp3:okhttp"
-    implementation "com.squareup.okhttp3:okhttp-bom:4.4.1"
+    implementation platform('com.squareup.okhttp3:okhttp-bom:4.12.0')
+    implementation "androidx.work:work-runtime:2.8.1"
     implementation 'org.jetbrains:annotations:15.0'
 }
