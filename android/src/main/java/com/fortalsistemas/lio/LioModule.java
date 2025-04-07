@@ -418,22 +418,18 @@ public class LioModule extends ReactContextBaseJavaModule {
             int PAGE_SIZE = 100;
 
             boolean hasFoundOrder = false;
-            Log.d(TAG, "[setOrderNotes] Começando");
             while (true) {
                 ResultOrders orders = this.orderManager.retrieveOrders(PAGE_SIZE, currentPage);
                 if (orders == null) {
-                    Log.d(TAG, "[setOrderNotes] Não existem orders");
                     break;
                 }
-                Log.d(TAG, "[setOrderNotes] Existem orders");
+
                 List<Order> resultOrders = orders.getResults();
                 for (Order orderIt : resultOrders) {
-                    Log.d(TAG, "[setOrderNotes] Comparando: " + orderIt.getId() + ", " + orderId);
                     if (orderIt.getId().equals(orderId)) {
                         orderIt.setNotes(notes);
                         this.orderManager.updateOrder(orderIt);
                         hasFoundOrder = true;
-                        Log.d(TAG, "[setOrderNotes] achou: " + orderIt.getNotes() + "," + orderIt.toString());
                         break;
                     }
                 }
@@ -443,9 +439,6 @@ public class LioModule extends ReactContextBaseJavaModule {
                 } else {
                     currentPage += 1;
                 }
-            }
-            if (!hasFoundOrder) {
-                Log.d(TAG, "[setOrderNotes] Não encontrado");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -647,7 +640,7 @@ public class LioModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void readNFC() {
+    public void activateNFC() {
         Log.d(TAG, "ACTIVE NFC");
         WritableMap nfcData = Arguments.createMap();
         try {
@@ -658,6 +651,9 @@ public class LioModule extends ReactContextBaseJavaModule {
 
                     nfcData.putBoolean("status", true);
                     nfcData.putString("cardId", bytesToHex(response.getData()));
+                    sendEvent(Events.ON_READ_NFC.toString(), nfcData);
+                } else {
+                    nfcData.putBoolean("status", false);
                     sendEvent(Events.ON_READ_NFC.toString(), nfcData);
                 }
             });

@@ -1,10 +1,10 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription } from 'react-native'
 const EventEmitter = new NativeEventEmitter(NativeModules.Lio || {})
 
-const ServiceState = {
-    ACTIVE: 0,
-    ERROR: 1,
-    INACTIVE: 2,
+enum ServiceState {
+    ACTIVE = 0,
+    ERROR = 1,
+    INACTIVE = 2,
 }
 
 type Payment = {
@@ -43,6 +43,12 @@ enum PrinterState {
     NO_PAPER = 2,
 }
 
+enum PRINT_KEY_ALIGNS {
+    VAL_ALIGN_CENTER = 0,
+    VAL_ALIGN_LEFT = 1,
+    VAL_ALIGN_RIGHT = 2,
+}
+
 enum PrintStyles {
     KEY_ALIGN = "key_attributes_align",
     KEY_TEXT_SIZE = "key_attributes_textsize",
@@ -53,9 +59,6 @@ enum PrintStyles {
     KEY_MARGIN_BOTTOM = "key_attributes_marginbottom",
     KEY_LINE_SPACE = "key_attributes_linespace",
     KEY_WEIGHT = "key_attributes_weight",
-    VAL_ALIGN_CENTER = 0,
-    VAL_ALIGN_LEFT = 1,
-    VAL_ALIGN_RIGHT = 2,
 }
 
 type PrintStyleKeys = keyof typeof PrintStyles | null | {};
@@ -136,8 +139,8 @@ const unbind = (): void => {
     return NativeModules.Lio.unbind()
 }
 
-const readNFC = (): void => {
-    return NativeModules.Lio.readNFC()
+const activateNFC = (): void => {
+    return NativeModules.Lio.activateNFC()
 }
 
 const deactivateNFC = (): void => {
@@ -161,9 +164,9 @@ const addListener = <eventName extends keyof EventMap>(
 
 export default {
     Lio, setup, getMachineInformation, getOrderList, createDraftOrder, setOrderNotes, getOrdersWithNotes,
-    addItems, placeOrder, checkoutOrder, printText, printImage, unbind, getIsServiceConnected, readNFC, deactivateNFC,
+    addItems, placeOrder, checkoutOrder, printText, printImage, unbind, getIsServiceConnected, activateNFC, deactivateNFC,
     requestPaymentCrashCredit, requestPaymentCreditInstallment, requestPaymentDebit, cancelPayment,
     addListener,
     ServiceState, PaymentState, PaymentStatus, CancellationState,
-    PrintStyles,
+    PrintStyles, PRINT_KEY_ALIGNS,
 }

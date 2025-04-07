@@ -63,6 +63,8 @@ Load library with client ID, accessToken and ec.
 * Access-Token Access token identification, which stores the access rules allowed to the Client ID. Its generation takes place when the Client ID is created by the developer panel. It's value can be viewed by clicking on 'details' in the 'Access Tokens' column, within the 'Client ID Registered' menu;
 * Ec is an client code;
 
+Use `onChangeServiceState` to listener events, containing **stateService** `ACTIVE`, `ERROR` or `INACTIVE`.
+
 ##### - requestPaymentCrashCredit(amount, orderId)
 Request payment with credit on sight. 
 *amout, value to pay;
@@ -99,19 +101,36 @@ Add items to order.
 
 #### checkoutOrder()
 
-#### printText(text, style)
-Print one line text using machine printter.
-* text: texto to print;
-* style: style of text;
+
+#### printText(text: string, style: object)
+Print one line text using terminal printter. List of possbilities for style:
+
+| Key                         | Description                                               |
+|----------------------------|-----------------------------------------------------------|
+| `KEY_ALIGN`                | Sets text alignment left(VAL_ALIGN_LEFT), center(VAL_ALIGN_CENTER), right(VAL_ALIGN_RIGHT)).                |
+| `KEY_TEXT_SIZE`            | Sets the text font size.                                  |
+| `KEY_TYPEFACE`             | Sets the font style (bold, italic, etc.).                 |
+| `KEY_MARGIN_LEFT`          | Sets the left margin.                                     |
+| `KEY_MARGIN_RIGHT`         | Sets the right margin.                                    |
+| `KEY_MARGIN_TOP`           | Sets the top margin.                                      |
+| `KEY_MARGIN_BOTTOM`        | Sets the bottom margin.                                   |
+| `KEY_LINE_SPACE`           | Sets the line spacing.                                    |
+| `KEY_WEIGHT`               | Sets the font weight (thickness).                         |
 
 
-#### printImage(encodedImage, style = {})
-Print an image using machine printter.
+#### printImage(encodedImage: string, style = {})
+Print an image using terminal printter.
 * encodedImage: Image encoded with base64 to print;
 * style: style of image;
 
-#### addListener()
+#### activateNFC()
+Activates the NFC reading module, waiting for NFC card reading. Whenever a card is read, an onReadNFC event will be sent, containing **status** and **cardId**.
 
+#### deactivateNFC()
+Disables the NFC reading module.
+
+#### addListener(event, callback)
+Available events: ```onReadNFC | onChangePrinterState | onChangeCancellationState | onChangePaymentState | onChangeServiceState```
 
 ## Troubleshooting
 
