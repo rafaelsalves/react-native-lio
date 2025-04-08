@@ -47,6 +47,8 @@ allprojects {
 }
 ```
 
+3. If you want to test in simulators or physical devices that isn't a Cielo Lio, you can [download](https://s3-sa-east-1.amazonaws.com/cielo-lio-store/apps/lio-emulator/1.60.4/lio-emulator.apk "download") and install.
+
 ## Supported react-native versions
 
 | react-native-lio | react-native |
