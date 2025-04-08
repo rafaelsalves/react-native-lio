@@ -63,46 +63,76 @@ Load library with client ID, accessToken and ec.
 * Access-Token Access token identification, which stores the access rules allowed to the Client ID. Its generation takes place when the Client ID is created by the developer panel. It's value can be viewed by clicking on 'details' in the 'Access Tokens' column, within the 'Client ID Registered' menu;
 * Ec is an client code;
 
-Use `onChangeServiceState` to listener events, containing **stateService** `ACTIVE`, `ERROR` or `INACTIVE`.
+Use `onChangeServiceState` to listener events. The payload containing **stateService** `ACTIVE`, `ERROR` or `INACTIVE`.
 
-##### - requestPaymentCrashCredit(amount, orderId)
+#### - requestPaymentCrashCredit(amount: number, orderId: string, notes: string)
 Request payment with credit on sight. 
-*amout, value to pay;
-*orderId, order number to transaction;
+- amout: value to pay;
+- orderId: order number to transaction;
+- notes: notes to save in payment;
 
-#### requestPaymentCreditInstallment(amount, orderId, installments)
+Use `onChangePaymentState`to listener the states changes of a payment. The payload contains `paymentState`: (`START`, `DONE`, `CANCELLED` and `ERROR`), and payment details.
+
+#### - requestPaymentCreditInstallment(amount: number, orderId: string, installments: number, notes: string
 Request payment with credit in installments. 
-*amout, value to pay;
-*orderId, order number to transaction;
-*installments, number of installments
+- amout: value to pay;
+- orderId: order number to transaction;
+- installments: number of installments
+- notes: notes to save in payment;
 
-#### requestPaymentDebit(amount, orderId)
+Use `onChangePaymentState`to listener the states changes of a payment. The payload contains `paymentState`: (`START`, `DONE`, `CANCELLED` and `ERROR`), and payment details.
+
+#### - requestPaymentDebit(amount: number, orderId: string, notes: string)
 Request payment with credit on sight. 
-*amout, value to pay;
-*orderId, order number to transaction;
+- amout: value to pay;
+- orderId: order number to transaction;
+- notes: notes to save in payment;
 
-#### getMachineInformation()
-Gets the machine informations.
+Use `onChangePaymentState`to listener the states changes of a payment. The payload contains `paymentState`: (`START`, `DONE`, `CANCELLED` and `ERROR`), and payment details.
 
-#### getOrderList()
+#### - cancelPayment(orderId: string, authCode: string, cieloCode: string, amount: number)
+Cancel a payment. 
+
+Use `onChangeCancellationState`to listener states of a cancel of payment. Use `onChangePaymentState`to listener the states changes of a payment. The payload contains `paymentState`: (`SUCCESS`, `ABORT` and `ERROR`), and payment details.
+
+#### - getMachineInformation(): MachineInformation
+Gets the terminal informations.
+
+MachineInformation: { logicNumber: string, merchantCode: string, isLoaded: boolean }
+
+#### - getIsServiceConnected(): boolean
+Get the service status.
+
+#### - getOrderList()
 
 Gets order list.
 
-#### createDraftOrder()
+#### - getOrdersWithNotes()
+
+Gets order list with notes only.
+
+#### - setOrderNotes(orderId: string, notes: string)
+
+Set the note of an order.
+
+#### - createDraftOrder(orderId: string)
 
 Creats a draft order.
 
-#### addItems()
+#### - addItems(items: Array<ProductItem>)
 
-Add items to order.
+Add items to order. `ProductItem`has { id_produto: string, descricao: string, preco: string, unidade: string }
 
-#### placeOrder()
+#### - placeOrder()
+Place a active order.
 
+#### - checkoutOrder()
+Release a checkout order.
 
-#### checkoutOrder()
+#### - unbind
+Unbind the module.
 
-
-#### printText(text: string, style: object)
+#### - printText(text: string, style: object)
 Print one line text using terminal printter. List of possbilities for style:
 
 | Key                         | Description                                               |
@@ -118,18 +148,18 @@ Print one line text using terminal printter. List of possbilities for style:
 | `KEY_WEIGHT`               | Sets the font weight (thickness).                         |
 
 
-#### printImage(encodedImage: string, style = {})
+#### - printImage(encodedImage: string, style = object)
 Print an image using terminal printter.
 * encodedImage: Image encoded with base64 to print;
-* style: style of image;
+* style: style of image, using the style options shown above;
 
-#### activateNFC()
+#### - activateNFC()
 Activates the NFC reading module, waiting for NFC card reading. Whenever a card is read, an onReadNFC event will be sent, containing **status** and **cardId**.
 
-#### deactivateNFC()
+#### - deactivateNFC()
 Disables the NFC reading module.
 
-#### addListener(event, callback)
+#### - addListener(event, callback)
 Available events: ```onReadNFC | onChangePrinterState | onChangeCancellationState | onChangePaymentState | onChangeServiceState```
 
 ## Troubleshooting

@@ -1,4 +1,4 @@
-package com.fortalsistemas.lio;
+package br.com.rafaelalves.lio;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
@@ -84,11 +84,6 @@ public class LioModule extends ReactContextBaseJavaModule {
         }
     }
 
-    public LioModule(ReactApplicationContext reactContext) {
-        super(reactContext);
-        this.reactContext = reactContext;
-    }
-
     @Override
     public String getName() {
         return "Lio";
@@ -100,6 +95,12 @@ public class LioModule extends ReactContextBaseJavaModule {
         return constants;
     }
 
+    public LioModule(ReactApplicationContext reactContext) {
+        super(reactContext);
+        this.reactContext = reactContext;
+    }
+
+    // Listeners
     private PaymentListener createPaymentListener() {
         PaymentListener paymentListener = new PaymentListener() {
             @Override
@@ -204,6 +205,36 @@ public class LioModule extends ReactContextBaseJavaModule {
         return cancellationListener;
     }
 
+    private PrinterListener createPrinterListener() {
+        PrinterListener printerListener = new PrinterListener() {
+            @Override
+            public void onPrintSuccess() {
+                Log.d(TAG, "IMPRESSO COM SUCESSO");
+                WritableMap printerState = Arguments.createMap();
+                printerState.putInt("printerState", 0);
+                sendEvent(Events.ON_CHANGE_PRINTER_STATE.toString(), printerState);
+            }
+
+            @Override
+            public void onError(@Nullable Throwable throwable) {
+                Log.d(TAG, "ERRO NA IMPRESSAO");
+                WritableMap printerState = Arguments.createMap();
+                printerState.putInt("printerState", 1);
+                sendEvent(Events.ON_CHANGE_PRINTER_STATE.toString(), printerState);
+            }
+
+            @Override
+            public void onWithoutPaper() {
+                Log.d(TAG, "SEM PAPEL");
+                WritableMap printerState = Arguments.createMap();
+                printerState.putInt("printerState", 2);
+                sendEvent(Events.ON_CHANGE_PRINTER_STATE.toString(), printerState);
+            }
+        };
+
+        return printerListener;
+    }
+    //Methods
     @ReactMethod
     public void setup(String clientID, String accessToken, String ec) {
         this.clientID = clientID;
@@ -579,49 +610,6 @@ public class LioModule extends ReactContextBaseJavaModule {
         return orderList;
     }
 
-    private PrinterListener createPrinterListener() {
-        PrinterListener printerListener = new PrinterListener() {
-            @Override
-            public void onPrintSuccess() {
-                Log.d(TAG, "IMPRESSO COM SUCESSO");
-                WritableMap printerState = Arguments.createMap();
-                printerState.putInt("printerState", 0);
-                sendEvent(Events.ON_CHANGE_PRINTER_STATE.toString(), printerState);
-            }
-
-            @Override
-            public void onError(@Nullable Throwable throwable) {
-                Log.d(TAG, "ERRO NA IMPRESSAO");
-                WritableMap printerState = Arguments.createMap();
-                printerState.putInt("printerState", 1);
-                sendEvent(Events.ON_CHANGE_PRINTER_STATE.toString(), printerState);
-            }
-
-            @Override
-            public void onWithoutPaper() {
-                Log.d(TAG, "SEM PAPEL");
-                WritableMap printerState = Arguments.createMap();
-                printerState.putInt("printerState", 2);
-                sendEvent(Events.ON_CHANGE_PRINTER_STATE.toString(), printerState);
-            }
-        };
-
-        return printerListener;
-    }
-
-    private HashMap<String, Integer> getTextAlign(ReadableMap style) {
-        HashMap<String, Integer> textStyle = new HashMap<>();
-
-        for (Iterator<Map.Entry<String, Object>> it = style.getEntryIterator(); it.hasNext(); ) {
-            Map.Entry<String, Object> entry = it.next();
-            Double foo = (Double) entry.getValue();
-            Integer bar = foo.intValue();
-            textStyle.put(entry.getKey(), bar);
-        }
-
-        return textStyle;
-    }
-
     @ReactMethod
     public void printText(String text, ReadableMap style) {
         Log.d(TAG, "PRINT TEXT: " + text);
@@ -685,9 +673,20 @@ public class LioModule extends ReactContextBaseJavaModule {
 
     }
 
-    /**
-     * Convert byte array to hexadecimal string (common format for NFC UID)
-     */
+    // Utils
+    private HashMap<String, Integer> getTextAlign(ReadableMap style) {
+        HashMap<String, Integer> textStyle = new HashMap<>();
+
+        for (Iterator<Map.Entry<String, Object>> it = style.getEntryIterator(); it.hasNext(); ) {
+            Map.Entry<String, Object> entry = it.next();
+            Double foo = (Double) entry.getValue();
+            Integer bar = foo.intValue();
+            textStyle.put(entry.getKey(), bar);
+        }
+
+        return textStyle;
+    }
+
     private String bytesToHex(byte[] bytes) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : bytes) {

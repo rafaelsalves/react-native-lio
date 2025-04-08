@@ -69,25 +69,32 @@ type MachineInformation = {
     isLoaded: boolean
 }
 
+type ProductItem = {
+    id_produto: string
+    descricao: string
+    preco: string
+    unidade: string
+}
+
 let Lio = {}
 
-const setup = (clientID: string, accessToken: string, ec = null) => {
+const setup = (clientID: string, accessToken: string, ec = null): void => {
     return NativeModules.Lio.setup(clientID, accessToken, ec);
 }
 
-const requestPaymentCrashCredit = (amount, orderId, notes = '') => {
+const requestPaymentCrashCredit = (amount: number, orderId: string, notes: string = ''): void => {
     return NativeModules.Lio.requestPaymentCrashCredit(amount, orderId, notes)
 }
 
-const requestPaymentCreditInstallment = (amount, orderId, installments, notes = '') => {
+const requestPaymentCreditInstallment = (amount: number, orderId: string, installments: number, notes: string = ''): void => {
     return NativeModules.Lio.requestPaymentCreditInstallment(amount, orderId, installments, notes)
 }
 
-const requestPaymentDebit = (amount, orderId, notes = '') => {
+const requestPaymentDebit = (amount: number, orderId: string, notes: string = ''): void => {
     return NativeModules.Lio.requestPaymentDebit(amount, orderId, notes)
 }
 
-const cancelPayment = (orderId, authCode, cieloCode, amount) => {
+const cancelPayment = (orderId: string, authCode: string, cieloCode: string, amount: number): void => {
     return NativeModules.Lio.cancelPayment(orderId, authCode, cieloCode, amount)
 }
 
@@ -95,32 +102,32 @@ const getMachineInformation = (): MachineInformation => {
     return NativeModules.Lio.getMachineInformation()
 }
 
-const getOrderList = (pageSize: number = 30, page: number = 0) => {
+const getOrderList = (pageSize: number = 30, page: number = 0): void => {
     return NativeModules.Lio.getOrderList(pageSize, page)
 }
 
-const createDraftOrder = (orderId: string) => {
+const createDraftOrder = (orderId: string): void => {
     return NativeModules.Lio.createDraftOrder(orderId);
-}
-
-const addItems = (items): void => {
-    return NativeModules.Lio.addItems(items);
-}
-
-const placeOrder = () => {
-    return NativeModules.Lio.placeOrder();
-}
-
-const checkoutOrder = (value, paymentCode) => {
-    return NativeModules.Lio.checkoutOrder(value, paymentCode);
 }
 
 const setOrderNotes = (orderId: string, notes: string = ''): void => {
     return NativeModules.Lio.setOrderNotes(orderId, notes)
 }
 
-const getOrdersWithNotes = () => {
+const getOrdersWithNotes = (): void => {
     return NativeModules.Lio.getOrdersWithNotes()
+}
+
+const addItems = (items: Array<ProductItem>): void => {
+    return NativeModules.Lio.addItems(items)
+}
+
+const placeOrder = (): void => {
+    return NativeModules.Lio.placeOrder()
+}
+
+const checkoutOrder = (value, paymentCode): void => {
+    return NativeModules.Lio.checkoutOrder(value, paymentCode);
 }
 
 const getIsServiceConnected = (): boolean => {
