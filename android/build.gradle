@@ -1,31 +1,13 @@
-buildscript {
-    if (project == rootProject) {
-        repositories {
-            google()
-            jcenter()
-        }
-
-        dependencies {
-            classpath 'com.android.tools.build:gradle:3.5.3'
-        }
-    }
-}
-
 apply plugin: 'com.android.library'
-
-def safeExtGet(prop) {
-    return rootProject.ext.get(prop)
-}
+apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion safeExtGet('compileSdkVersion')
-    buildToolsVersion safeExtGet('buildToolsVersion')
-    defaultConfig {
-        minSdkVersion safeExtGet('minSdkVersion')
-        targetSdkVersion safeExtGet('targetSdkVersion')
-        versionCode 1
-        versionName "1.0"
+    namespace 'com.reactnativelio'
+    compileSdkVersion 34
 
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 34
     }
 
     buildTypes {
@@ -33,29 +15,18 @@ android {
             minifyEnabled false
         }
     }
-    lintOptions {
-        disable 'GradleCompatible'
-    }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
-}
 
-repositories {
-    mavenLocal()
-
-    maven {
-        url("$rootDir/../node_modules/react-native-lio/android/cielo-sdk")
+    kotlinOptions {
+        jvmTarget = '17'
     }
 }
 
 dependencies {
-    //noinspection GradleDynamicVersion
-    implementation "com.facebook.react:react-native:+"  // From node_modules
-    implementation 'com.cielo.lio:order-manager:2.0.1'
-    implementation "com.squareup.okhttp3:okhttp"
-    implementation platform('com.squareup.okhttp3:okhttp-bom:4.12.0')
-    implementation "androidx.work:work-runtime:2.8.1"
-    implementation 'org.jetbrains:annotations:15.0'
+    implementation 'com.facebook.react:react-native:+'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.10"
 }
