@@ -33,10 +33,26 @@ export interface LioReversalParams {
     [key: string]: any;
 }
 
+export interface LioPrintStyle {
+    key_attributes_align?: 0 | 1 | 2; // 0 = Center, 1 = Left, 2 = Right
+    key_attributes_textsize?: number;
+    key_attributes_typeface?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+    key_attributes_marginleft?: number;
+    key_attributes_marginright?: number;
+    key_attributes_margintop?: number;
+    key_attributes_marginbottom?: number;
+    key_attributes_linespace?: number;
+    key_attributes_weight?: number;
+    form_feed?: 0 | 1; // 0 = sem espaçamento, 1 = com espaçamento
+    [key: string]: any;
+}
+
 export interface LioPrintParams {
     clientID: string;
     accessToken: string;
-    text: string;
+    operation: 'PRINT_TEXT' | 'PRINT_IMAGE' | 'PRINT_MULTI_COLUMN_TEXT';
+    styles?: LioPrintStyle[];
+    value: string[];
     [key: string]: any;
 }
 
@@ -53,10 +69,20 @@ export interface LioResponse {
 
 export interface LioDeviceInfoResponse extends LioResponse {
     serialNumber?: string;
-    logicalNumber?: string;
+    logicNumber?: string;
+    imeiNumber?: string;
+    deviceModel?: string;
     merchantCode?: string;
-    model?: string;
-    [key: string]: any;
+    responseCode?: number;
+    batteryLevel?: number;
+}
+
+export enum LioOrderStatus {
+    PAID = 'PAID',
+    ENTERED = 'ENTERED',
+    DRAFT = 'DRAFT',
+    CLOSED = 'CLOSED',
+    RE_ENTERED = 'RE-ENTERED'
 }
 
 export interface LioOrder {
@@ -72,6 +98,8 @@ export interface LioOrdersParams {
     clientID: string;
     accessToken: string;
     onlyWithPayments?: boolean;
+    pageSize?: number;
+    page?: number;
 }
 
 export interface LioOrdersResponse extends LioResponse {

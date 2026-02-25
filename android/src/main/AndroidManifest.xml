@@ -1,9 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="cielo.lio.permission.CASHLESS"/>
     <queries>
-        <!-- Permite interação com o Cielo Smart Order Service -->
         <package android:name="br.com.cielosmart.orderservice" />
-        <!-- Permite consulta de apps que respondem a deeplinks lio:// -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="lio" />
