@@ -1,116 +1,33 @@
-import { NativeModules, NativeEventEmitter, EmitterSubscription } from 'react-native';
+import { NativeModules, NativeEventEmitter, EmitterSubscription } from 'react-native'
+import { LIO_CLIENT_ID, LIO_ACCESS_TOKEN } from '@env'
 
-const { LioDeepLink: LioDeepLinkNative } = NativeModules;
+export * from './types'
 
-// Types
-export interface LioPaymentItem {
-    id?: number;
-    sku: string;
-    name: string;
-    unit_price: number; // Preço unitário em centavos
-    quantity: number;
-    unitOfMeasure: string; // Ex: "EACH", "HOUR", "KILO"
+import {
+    type LioPaymentParams,
+    type LioReversalParams,
+    type LioPrintParams,
+    type LioDeviceInfoParams,
+    type LioDeviceInfoResponse,
+    type LioOrdersParams,
+    type LioOrdersResponse,
+    type LioResponse,
+    type LioResponseCallback,
+    LioOrderStatus,
+} from './types'
+
+const { LioDeepLink: LioDeepLinkNative } = NativeModules
+
+/**
+ * Aplica credenciais padrão se não forem fornecidas
+ */
+function applyDefaultCredentials<T extends { clientID?: string; accessToken?: string }>(params: T): T {
+    return {
+        ...params,
+        clientID: params.clientID || LIO_CLIENT_ID,
+        accessToken: params.accessToken || LIO_ACCESS_TOKEN,
+    } as T
 }
-
-export interface LioPaymentParams {
-    clientID: string;
-    accessToken: string;
-    value: number; // Valor total em centavos (ex: 1000 = R$ 10,00)
-    items: LioPaymentItem[]; // Array de itens (obrigatório)
-    installments?: number;
-    orderId?: string;
-    email?: string;
-    [key: string]: any;
-}
-
-export interface LioReversalParams {
-    clientID: string;
-    accessToken: string;
-    orderId: string;
-    value: number;
-    authCode?: string;
-    cieloCode?: string;
-    [key: string]: any;
-}
-
-export interface LioPrintStyle {
-    key_attributes_align?: 0 | 1 | 2; // 0 = Center, 1 = Left, 2 = Right
-    key_attributes_textsize?: number;
-    key_attributes_typeface?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-    key_attributes_marginleft?: number;
-    key_attributes_marginright?: number;
-    key_attributes_margintop?: number;
-    key_attributes_marginbottom?: number;
-    key_attributes_linespace?: number;
-    key_attributes_weight?: number;
-    form_feed?: 0 | 1; // 0 = sem espaçamento, 1 = com espaçamento
-    [key: string]: any;
-}
-
-export interface LioPrintParams {
-    clientID: string;
-    accessToken: string;
-    operation: 'PRINT_TEXT' | 'PRINT_IMAGE' | 'PRINT_MULTI_COLUMN_TEXT';
-    styles?: LioPrintStyle[];
-    value: string[];
-    [key: string]: any;
-}
-
-export interface LioDeviceInfoParams {
-    clientID: string;
-    accessToken: string;
-}
-
-export interface LioResponse {
-    success?: boolean;
-    error?: string;
-    [key: string]: any;
-}
-
-export interface LioDeviceInfoResponse extends LioResponse {
-    serialNumber?: string;
-    logicNumber?: string;
-    imeiNumber?: string;
-    deviceModel?: string;
-    merchantCode?: string;
-    responseCode?: number;
-    batteryLevel?: number;
-}
-
-export enum LioOrderStatus {
-    PAID = 'PAID',
-    ENTERED = 'ENTERED',
-    DRAFT = 'DRAFT',
-    CLOSED = 'CLOSED',
-    RE_ENTERED = 'RE-ENTERED'
-}
-
-export interface LioOrder {
-    id: string;
-    number: string;
-    reference?: string;
-    status: string;
-    price: number;
-    [key: string]: any;
-}
-
-export interface LioOrdersParams {
-    clientID: string;
-    accessToken: string;
-    onlyWithPayments?: boolean;
-    pageSize?: number;
-    page?: number;
-}
-
-export interface LioOrdersResponse extends LioResponse {
-    results?: string | LioOrder[]; // Vem como string JSON que precisa ser parseado
-    totalItems?: number;
-    totalPages?: number;
-    currentPage?: number;
-    [key: string]: any;
-}
-
-export type LioResponseCallback = (response: LioResponse) => void;
 
 class LioDeepLinkModule {
     private eventEmitter: NativeEventEmitter;
@@ -132,8 +49,10 @@ class LioDeepLinkModule {
     * @returns Promise<boolean> - true se o intent foi enviado com sucesso
     */
     async getDeviceInfo(
-        params: LioDeviceInfoParams
+        params: LioDeviceInfoParams = {}
     ): Promise<LioDeviceInfoResponse> {
+        const paramsWithDefaults = applyDefaultCredentials(params);
+
         return new Promise((resolve, reject) => {
             const subscription = this.addResponseListener((content) => {
                 this.removeListener(subscription);
@@ -142,7 +61,7 @@ class LioDeepLinkModule {
 
             LioDeepLinkNative.sendIntent(
                 'terminalinfo',
-                params,
+                paramsWithDefaults,
                 'lio://terminalinfo-response'
             ).catch((error: Error) => {
                 this.removeListener(subscription);
@@ -160,6 +79,8 @@ class LioDeepLinkModule {
     async sendPayment(
         params: LioPaymentParams
     ): Promise<LioResponse> {
+        const paramsWithDefaults = applyDefaultCredentials(params);
+
         return new Promise((resolve, reject) => {
             const subscription = this.addResponseListener((content) => {
                 this.removeListener(subscription);
@@ -168,7 +89,7 @@ class LioDeepLinkModule {
 
             LioDeepLinkNative.sendIntent(
                 'payment',
-                params,
+                paramsWithDefaults,
                 'lio://payment-response'
             ).catch((error: Error) => {
                 this.removeListener(subscription);
@@ -186,6 +107,8 @@ class LioDeepLinkModule {
     async sendReversal(
         params: LioReversalParams
     ): Promise<LioResponse> {
+        const paramsWithDefaults = applyDefaultCredentials(params);
+
         return new Promise((resolve, reject) => {
             const subscription = this.addResponseListener((content) => {
                 this.removeListener(subscription);
@@ -194,7 +117,7 @@ class LioDeepLinkModule {
 
             LioDeepLinkNative.sendIntent(
                 'payment-reversal',
-                params,
+                paramsWithDefaults,
                 'lio://reversal-response'
             ).catch((error: Error) => {
                 this.removeListener(subscription);
@@ -212,6 +135,8 @@ class LioDeepLinkModule {
     async sendPrint(
         params: LioPrintParams
     ): Promise<LioResponse> {
+        const paramsWithDefaults = applyDefaultCredentials(params);
+
         return new Promise((resolve, reject) => {
             const subscription = this.addResponseListener((content) => {
                 this.removeListener(subscription);
@@ -220,7 +145,7 @@ class LioDeepLinkModule {
 
             LioDeepLinkNative.sendIntent(
                 'print',
-                params,
+                paramsWithDefaults,
                 'lio://print-response'
             ).catch((error: Error) => {
                 this.removeListener(subscription);
@@ -230,23 +155,40 @@ class LioDeepLinkModule {
     }
 
     /**
+    * Salva uma imagem Base64 no storage e retorna o caminho do arquivo
+    * @param base64Image - String Base64 da imagem (com ou sem prefixo data:image)
+    * @param fileName - Nome do arquivo (sem extensão)
+    * @returns Promise<string> - Caminho absoluto do arquivo salvo
+    */
+    async saveBase64Image(base64Image: string, fileName: string): Promise<string> {
+        return LioDeepLinkNative.saveBase64Image(base64Image, fileName);
+    }
+
+    /**
      * Obtém a lista de pedidos da Cielo LIO
-     * @param params - Parâmetros com clientID, accessToken e filtro opcional
-     * @returns Promise<LioOrdersResponse> - Lista de pedidos
+     * @param params - Parâmetros com clientID, accessToken e filtros opcionais
+     * @returns Promise<LioOrdersResponse> - Lista de pedidos filtrados por status (padrão: ['PAID'])
      */
     async getOrders(
-        params: LioOrdersParams
+        params: LioOrdersParams = {}
     ): Promise<LioOrdersResponse> {
+        const paramsWithDefaults = applyDefaultCredentials(params);
+
         return new Promise((resolve, reject) => {
             const subscription = this.addResponseListener((content) => {
                 this.removeListener(subscription);
 
-                const shouldFilter = params.onlyWithPayments !== false
+                if (content.results && Array.isArray(content.results)) {
+                    const statusFilter = paramsWithDefaults.statusFilter || [LioOrderStatus.PAID];
 
-                if (shouldFilter && content.results && Array.isArray(content.results)) {
-                    const filteredResults = content.results.filter((order: any) =>
-                        order.payments && Array.isArray(order.payments) && order.payments.length > 0
-                    )
+                    const shouldReturnAll = statusFilter === 'ALL' ||
+                        (Array.isArray(statusFilter) && (statusFilter as any).includes('ALL'))
+
+                    const filteredResults = shouldReturnAll
+                        ? content.results
+                        : content.results.filter((order: any) =>
+                            (statusFilter as any).includes(order.status)
+                        );
 
                     resolve({
                         ...content,
@@ -260,7 +202,7 @@ class LioDeepLinkModule {
 
             LioDeepLinkNative.sendIntent(
                 'orders',
-                params,
+                paramsWithDefaults,
                 'lio://orders-response'
             ).catch((error: Error) => {
                 this.removeListener(subscription);
@@ -301,5 +243,4 @@ class LioDeepLinkModule {
     }
 }
 
-// Exporta uma instância única (singleton)
 export default new LioDeepLinkModule();

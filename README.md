@@ -7,10 +7,12 @@ React Native library for Cielo LIO deeplink integration. Supports payments, reve
 - ✅ **Device Information** - Get LIO terminal details (serial number, merchant code, battery level, etc.)
 - ✅ **Payments** - Process debit and credit payments (cash and installments)
 - ✅ **Reversals** - Cancel/reverse payments
-- ✅ **Print** - Print receipts and custom text with styling options
-- ✅ **Orders** - List and filter orders with payment information
+- ✅ **Print** - Print receipts, images, and custom text with styling options
+- ✅ **Orders** - List and filter orders with payment information and pagination
 - ✅ **Promise-based API** - Clean async/await interface
 - ✅ **TypeScript** - Full type definitions included
+- ✅ **Environment Variables** - Automatic credential fallback with react-native-dotenv
+- ✅ **Base64 Image Support** - Convert and save Base64 images for printing
 
 ## Installation
 
@@ -42,6 +44,16 @@ dependencies {
 }
 ```
 
+**Important:** Set `targetSdkVersion` to 30 for LIO compatibility:
+
+```gradle
+android {
+    defaultConfig {
+        targetSdkVersion 30  // Required for LIO
+    }
+}
+```
+
 ### 3. AndroidManifest.xml
 
 Add queries and intent-filters in `android/app/src/main/AndroidManifest.xml`:
@@ -50,16 +62,14 @@ Add queries and intent-filters in `android/app/src/main/AndroidManifest.xml`:
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <queries>
-        <!-- Allow interaction with Cielo Smart Order Service -->
+        <!-- LIO Real Device -->
+        <package android:name="com.ads.lio.uriappclient" />
+        <!-- LIO Simulator (fallback) -->
         <package android:name="br.com.cielosmart.orderservice" />
-        <!-- Allow querying apps that respond to lio:// deeplinks -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="lio" />
-        </intent>
     </queries>
 
-    <application>
+    <application
+        android:requestLegacyExternalStorage="true">
         <meta-data
             android:name="cs_integration_type"
             android:value="uri" />
@@ -92,9 +102,14 @@ Configure deeplink handling in `android/app/src/main/java/com/[your-app]/MainAct
 import android.content.Intent
 import android.os.Bundle
 import com.facebook.react.ReactActivity
+import com.facebook.react.ReactActivityDelegate
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
+import com.facebook.react.defaults.DefaultReactActivityDelegate
 import com.reactnativelio.LioDeepLinkModule
 
 class MainActivity : ReactActivity() {
+
+    override fun getMainComponentName(): String = "YourAppName"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(null)
@@ -103,6 +118,7 @@ class MainActivity : ReactActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleDeepLink(intent)
     }
 
@@ -112,6 +128,9 @@ class MainActivity : ReactActivity() {
             lioModule?.handleDeepLinkResponse(uri)
         }
     }
+
+    override fun createReactActivityDelegate(): ReactActivityDelegate =
+        DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
 }
 ```
 
@@ -134,32 +153,57 @@ class MainApplication : Application(), ReactApplication {
 }
 ```
 
+### 6. Environment Variables (Optional)
+
+Create `.env` file in your project root:
+
+```env
+LIO_CLIENT_ID="your_client_id_here"
+LIO_ACCESS_TOKEN="your_access_token_here"
+```
+
+Install `react-native-dotenv`:
+
+```bash
+yarn add react-native-dotenv
+```
+
+Configure `babel.config.js`:
+
+```javascript
+module.exports = {
+  presets: ['module:metro-react-native-babel-preset'],
+  plugins: [
+    ['module:react-native-dotenv', {
+      moduleName: '@env',
+      path: '.env',
+    }]
+  ]
+};
+```
+
 ## Usage
 
 ### Import
 
 ```typescript
-import Lio from 'react-native-lio';
-import { LioOrderStatus } from 'react-native-lio';
+import Lio, { LioOrderStatus } from 'react-native-lio';
 ```
 
 ### 1. Get Device Information
 
 ```typescript
 const deviceInfo = await Lio.getDeviceInfo({
-    clientID: 'your_client_id',
-    accessToken: 'your_access_token',
+    clientID: 'your_client_id',  // Optional if using .env
+    accessToken: 'your_access_token',  // Optional if using .env
 });
 
 console.log(deviceInfo);
 // {
 //   serialNumber: "99999999-9",
 //   logicNumber: "99999999-9",
-//   imeiNumber: "UNDEFINED",
-//   deviceModel: "UNDEFINED",
 //   merchantCode: "9999999999999999",
-//   responseCode: 0,
-//   batteryLevel: 1
+//   batteryLevel: 100
 // }
 ```
 
@@ -167,136 +211,184 @@ console.log(deviceInfo);
 
 ```typescript
 const payment = await Lio.sendPayment({
-    clientID: 'your_client_id',
-    accessToken: 'your_access_token',
     value: 10000, // R$ 100.00 in cents
-    installments: 0, // 0 for debit or cash credit
-    paymentCode: 'DEBITO_AVISTA', // or 'CREDITO_AVISTA', 'CREDITO_PARCELADO'
+    installments: 0, // 0 for cash payments
+    paymentCode: 'DEBITO_AVISTA',
     email: 'customer@email.com',
     items: [
         {
-            id: 123456,
             sku: '123',
             name: 'Test Product',
             unit_price: 10000,
             quantity: 1,
-            unitOfMeasure: 'unit'
+            unitOfMeasure: 'EACH'
         }
     ]
 });
+
+console.log(payment);
+// {
+//   id: "payment-uuid",
+//   authCode: "ABC123",
+//   cieloCode: "XYZ789",
+//   amount: 10000,
+//   brand: "VISA",
+//   installments: 1
+// }
 ```
 
 **Payment Codes:**
 - `DEBITO_AVISTA` - Debit
 - `CREDITO_AVISTA` - Credit (cash)
-- `CREDITO_PARCELADO` - Credit (installments - use `installments` field)
+- `CREDITO_PARCELADO_LOJA` - Credit (installments)
 
 **Example with Installments:**
 
 ```typescript
 const payment = await Lio.sendPayment({
-    clientID: 'your_client_id',
-    accessToken: 'your_access_token',
     value: 30000, // R$ 300.00
-    installments: 3, // 3 installments
-    paymentCode: 'CREDITO_PARCELADO',
-    email: 'customer@email.com',
-    items: [
-        {
-            id: 123456,
-            sku: '123',
-            name: 'Test Product',
-            unit_price: 30000,
-            quantity: 1,
-            unitOfMeasure: 'unit'
-        }
-    ]
+    installments: 3,
+    paymentCode: 'CREDITO_PARCELADO_LOJA',
+    items: [/* ... */]
 });
 ```
 
-### 3. Cancel Payment
+### 3. Cancel Payment (Reversal)
 
 ```typescript
 const reversal = await Lio.sendReversal({
-    clientID: 'your_client_id',
-    accessToken: 'your_access_token',
-    orderId: '12345',
+    id: 'payment-uuid',  // Payment ID (NOT orderId)
     value: 10000,
-    authCode: 'authorization_code',
-    cieloCode: 'cielo_code'
+    authCode: 'ABC123',
+    cieloCode: 'XYZ789'
 });
 ```
 
-### 4. Print
+**Important:** Use `id` (payment ID), not `orderId`.
+
+### 4. Print Text
 
 ```typescript
-const print = await Lio.sendPrint({
-    clientID: 'your_client_id',
-    accessToken: 'your_access_token',
+await Lio.sendPrint({
     operation: 'PRINT_TEXT',
     styles: [
         {
             key_attributes_align: 0, // 0=Center, 1=Left, 2=Right
-            key_attributes_textsize: 20,
-            key_attributes_typeface: 1, // 0 to 8
+            key_attributes_textsize: 30,
+            key_attributes_typeface: 1,
+            form_feed: 1
         }
     ],
     value: [
         'SALES RECEIPT\n',
         '====================\n',
-        `Date: ${new Date().toLocaleDateString()}\n`,
         'Amount: R$ 100.00\n',
-        'Status: Approved\n',
         '====================\n'
     ]
 });
 ```
 
-**Style Attributes:**
+### 5. Print Image
+
+```typescript
+// First, save Base64 image to file
+const imagePath = await Lio.saveBase64Image(
+    'data:image/png;base64,iVBORw0KGgo...',
+    'logo'
+);
+
+// Then print the image
+await Lio.sendPrint({
+    operation: 'PRINT_IMAGE',
+    styles: [{
+        key_attributes_align: 0,
+        key_attributes_marginbottom: 30
+    }],
+    value: [imagePath]
+});
+```
+
+### 6. Print Multi-Column Text
+
+```typescript
+await Lio.sendPrint({
+    operation: 'PRINT_MULTI_COLUMN_TEXT',
+    styles: [
+        { key_attributes_align: 1, key_attributes_textsize: 20 },  // Left
+        { key_attributes_align: 0, key_attributes_textsize: 20 },  // Center
+        { key_attributes_align: 2, key_attributes_textsize: 20 }   // Right
+    ],
+    value: [
+        'Left column\n',
+        'Center column\n',
+        'Right column\n'
+    ]
+});
+```
+
+**Print Style Attributes:**
 
 | Attribute | Description | Values |
 |----------|-----------|---------|
 | `key_attributes_align` | Text alignment | 0 (Center), 1 (Left), 2 (Right) |
-| `key_attributes_textsize` | Text size | Integer |
+| `key_attributes_textsize` | Text size | Integer (e.g., 20, 30) |
 | `key_attributes_typeface` | Font type | 0 to 8 |
 | `key_attributes_marginleft` | Left margin | Integer |
 | `key_attributes_marginright` | Right margin | Integer |
 | `key_attributes_margintop` | Top margin | Integer |
 | `key_attributes_marginbottom` | Bottom margin | Integer |
 | `key_attributes_linespace` | Line spacing | Integer |
-| `key_attributes_weight` | Column weight (multi-column) | Integer |
+| `key_attributes_weight` | Column weight | Integer |
 | `form_feed` | Spacing after print | 0 (none), 1 (with) |
 
-### 5. List Orders
+### 7. List Orders with Pagination
 
 ```typescript
+// Default: returns only PAID orders
 const orders = await Lio.getOrders({
-    clientID: 'your_client_id',
-    accessToken: 'your_access_token',
-    onlyWithPayments: true, // filter only orders with payments (default: true)
-    pageSize: 10,
-    page: 0
+    page: 0,
+    pageSize: 10
 });
 
-if (orders.results && Array.isArray(orders.results)) {
-    orders.results.forEach(order => {
-        console.log(`Order: ${order.number}`);
-        console.log(`Status: ${order.status}`);
-        console.log(`Price: ${order.price}`);
-    });
-}
+// Custom status filter
+const orders = await Lio.getOrders({
+    statusFilter: [LioOrderStatus.PAID, LioOrderStatus.CANCELED],
+    page: 0,
+    pageSize: 10
+});
+
+// All orders
+const orders = await Lio.getOrders({
+    statusFilter: 'ALL',
+    page: 0,
+    pageSize: 10
+});
+
+console.log(orders.results); // Array of orders
+console.log(orders.totalItems); // Total count
 ```
 
 **Order Status:**
 
 ```typescript
-import { LioOrderStatus } from 'react-native-lio';
-
 LioOrderStatus.PAID        // 'PAID'
+LioOrderStatus.CANCELED    // 'CANCELED'
 LioOrderStatus.ENTERED     // 'ENTERED'
 LioOrderStatus.DRAFT       // 'DRAFT'
 LioOrderStatus.CLOSED      // 'CLOSED'
 LioOrderStatus.RE_ENTERED  // 'RE-ENTERED'
+```
+
+### 8. Save Base64 Image
+
+```typescript
+const imagePath = await Lio.saveBase64Image(
+    base64String,  // With or without data:image prefix
+    'filename'     // Without extension (will be saved as .jpg)
+);
+
+console.log(imagePath);
+// /storage/emulated/0/Android/data/com.yourapp/files/images/filename.jpg
 ```
 
 ## API Reference
@@ -306,8 +398,8 @@ LioOrderStatus.RE_ENTERED  // 'RE-ENTERED'
 ```typescript
 // Payment Parameters
 interface LioPaymentParams {
-    clientID: string;
-    accessToken: string;
+    clientID?: string;  // Optional if using .env
+    accessToken?: string;  // Optional if using .env
     value: number; // in cents
     items: LioPaymentItem[];
     installments?: number;
@@ -323,25 +415,14 @@ interface LioPaymentItem {
     name: string;
     unit_price: number; // in cents
     quantity: number;
-    unitOfMeasure: string;
-}
-
-// Device Information Response
-interface LioDeviceInfoResponse {
-    serialNumber?: string;
-    logicNumber?: string;
-    imeiNumber?: string;
-    deviceModel?: string;
-    merchantCode?: string;
-    responseCode?: number;
-    batteryLevel?: number;
+    unitOfMeasure: string; // "EACH", "HOUR", "KILO", etc.
 }
 
 // Reversal Parameters
 interface LioReversalParams {
-    clientID: string;
-    accessToken: string;
-    orderId: string;
+    clientID?: string;
+    accessToken?: string;
+    id: string;  // Payment ID (not orderId)
     value: number;
     authCode?: string;
     cieloCode?: string;
@@ -349,11 +430,11 @@ interface LioReversalParams {
 
 // Print Parameters
 interface LioPrintParams {
-    clientID: string;
-    accessToken: string;
-    operation: 'PRINT_TEXT';
+    clientID?: string;
+    accessToken?: string;
+    operation: 'PRINT_TEXT' | 'PRINT_IMAGE' | 'PRINT_MULTI_COLUMN_TEXT';
     styles?: LioPrintStyle[];
-    value: string[];
+    value: string[]; // For TEXT: array of strings | For IMAGE: [file_path]
 }
 
 // Print Style
@@ -370,22 +451,100 @@ interface LioPrintStyle {
     form_feed?: 0 | 1;
 }
 
+// Device Info Parameters
+interface LioDeviceInfoParams {
+    clientID?: string;
+    accessToken?: string;
+}
+
+// Device Info Response
+interface LioDeviceInfoResponse {
+    serialNumber?: string;
+    logicNumber?: string;
+    imeiNumber?: string;
+    deviceModel?: string;
+    merchantCode?: string;
+    responseCode?: number;
+    batteryLevel?: number;
+}
+
 // Orders Parameters
 interface LioOrdersParams {
-    clientID: string;
-    accessToken: string;
-    onlyWithPayments?: boolean; // default: true
+    clientID?: string;
+    accessToken?: string;
+    statusFilter?: (LioOrderStatus | 'ALL')[] | 'ALL'; // Default: ['PAID']
     pageSize?: number;
     page?: number;
+}
+
+// Order
+interface LioOrder {
+    id: string;
+    number: string;
+    reference?: string;
+    status: string;
+    price: number;
+    updatedAt: string;
+    createdAt: string;
+    type: string;
+    pendingAmount: number;
+    paidAmount: number;
+    notes: string;
+    payments?: LioPayment[];
+    items?: LioOrderItem[];
+}
+
+// Payment (within Order)
+interface LioPayment {
+    id: string;
+    terminal: string;
+    authCode: string;
+    cieloCode: string;
+    brand: string;
+    amount: number;
+    installments: number;
+    primaryCode: string;
+    secondaryCode: string;
+    requestDate: string;
+    merchantCode: string;
+    mask: string;
+    externalId: string;
+    applicationName: string;
+    discountedAmount: number;
+    description: string;
+    accessKey: string;
+    paymentFields: { [key: string]: any };
+}
+
+// Order Item
+interface LioOrderItem {
+    id: string;
+    sku: string;
+    name: string;
+    unitPrice: number;
+    quantity: number;
+    unitOfMeasure: string;
+    reference?: string;
+    details?: string;
+    description?: string;
 }
 
 // Order Status
 enum LioOrderStatus {
     PAID = 'PAID',
+    CANCELED = 'CANCELED',
     ENTERED = 'ENTERED',
     DRAFT = 'DRAFT',
     CLOSED = 'CLOSED',
     RE_ENTERED = 'RE-ENTERED'
+}
+
+// Orders Response
+interface LioOrdersResponse {
+    results?: LioOrder[];
+    totalItems?: number;
+    totalPages?: number;
+    currentPage?: number;
 }
 
 // Generic Response
@@ -398,33 +557,58 @@ interface LioResponse {
 
 ### Methods
 
-#### `getDeviceInfo(params: LioDeviceInfoParams): Promise<LioDeviceInfoResponse>`
-Get LIO terminal information including serial number, merchant code, battery level, and device model.
+#### `getDeviceInfo(params?: LioDeviceInfoParams): Promise<LioDeviceInfoResponse>`
+Get LIO terminal information including serial number, merchant code, and battery level.
 
 #### `sendPayment(params: LioPaymentParams): Promise<LioResponse>`
 Send payment request to LIO terminal. Returns payment result with transaction details.
 
 #### `sendReversal(params: LioReversalParams): Promise<LioResponse>`
-Cancel/reverse a previous payment transaction.
+Cancel/reverse a previous payment transaction using payment ID.
 
 #### `sendPrint(params: LioPrintParams): Promise<LioResponse>`
-Print custom text with optional styling. Supports multiple text alignment, fonts, and margins.
+Print text, images, or multi-column text with optional styling.
 
-#### `getOrders(params: LioOrdersParams): Promise<LioOrdersResponse>`
-List orders from LIO terminal with optional filtering by payment status and pagination.
+#### `getOrders(params?: LioOrdersParams): Promise<LioOrdersResponse>`
+List orders from LIO terminal with status filtering and pagination support.
+
+#### `saveBase64Image(base64Image: string, fileName: string): Promise<string>`
+Convert Base64 image to JPG file and return absolute file path for printing.
+
+## Helper Functions
+
+### Format LIO Date
+
+```typescript
+import { formatLioDate } from '@helpers/functions';
+
+// Auto-detects format (ISO 8601 or "MMM DD, YYYY h:mm:ss A")
+const formatted = formatLioDate(order.createdAt);
+// "26/02/2026 - 17:26"
+
+// Custom format
+const custom = formatLioDate(order.createdAt, 'DD/MM/YYYY');
+// "26/02/2026"
+```
+
+The `formatLioDate` function automatically detects:
+- **ISO 8601** (real device): `2026-02-26T17:26:57.312Z`
+- **Legacy format** (simulator): `Feb 26, 2026 9:50:55 AM`
 
 ## Troubleshooting
 
 ### Error: NO_HANDLER
 
 This means the Cielo LIO app is not responding. Check:
-1. If `br.com.cielosmart.orderservice` app is installed on the device
-2. If credentials (`clientID` and `accessToken`) are correct
-3. If `queries` are configured in AndroidManifest.xml
+1. Package names are correctly configured in AndroidManifest.xml `<queries>`
+   - Real LIO: `com.ads.lio.uriappclient`
+   - Simulator: `br.com.cielosmart.orderservice`
+2. Credentials (`clientID` and `accessToken`) are correct
+3. `targetSdkVersion` is set to 30
 
 ### Module not found
 
-If you get "Module not found" error, run:
+If you get "Module not found" error:
 
 ```bash
 cd android && ./gradlew clean && cd ..
@@ -434,14 +618,68 @@ yarn android
 ### Deeplink not being received
 
 Check if:
-1. MainActivity `launchMode` is set to `singleTask` in AndroidManifest.xml
+1. MainActivity `launchMode` is set to `singleTask`
 2. Intent-filters are configured correctly
-3. `handleDeepLink` method is being called in both `onCreate` and `onNewIntent`
+3. `handleDeepLink` is called in both `onCreate` and `onNewIntent`
+4. `setIntent(intent)` is called in `onNewIntent`
+
+### Images not printing
+
+Ensure:
+1. `android:requestLegacyExternalStorage="true"` is in AndroidManifest.xml
+2. Base64 image is valid JPG/PNG format
+3. Using `saveBase64Image()` before passing to print
+
+### Reversal fails with "Invalid JSON"
+
+Make sure you're using `id` (payment ID), not `orderId`:
+
+```typescript
+// ✅ Correct
+await Lio.sendReversal({ id: payment.id, ... })
+
+// ❌ Wrong
+await Lio.sendReversal({ orderId: order.id, ... })
+```
+
+## Pagination Example
+
+```typescript
+const [paymentsList, setPaymentsList] = useState([]);
+const [currentPage, setCurrentPage] = useState(0);
+const [hasMore, setHasMore] = useState(true);
+const PAGE_SIZE = 10;
+
+const loadMore = async () => {
+    if (!hasMore) return;
+
+    const orders = await Lio.getOrders({
+        statusFilter: [LioOrderStatus.PAID, LioOrderStatus.CANCELED],
+        page: currentPage,
+        pageSize: PAGE_SIZE
+    });
+
+    const newPayments = orders.results || [];
+    setPaymentsList([...paymentsList, ...newPayments]);
+    setCurrentPage(currentPage + 1);
+    setHasMore(newPayments.length === PAGE_SIZE);
+};
+
+// In FlatList
+<FlatList
+    data={paymentsList}
+    onEndReachedThreshold={0.5}
+    onEndReached={({ distanceFromEnd }) => {
+        if (distanceFromEnd > 0) loadMore();
+    }}
+/>
+```
 
 ## Official Documentation
 
-For more details about Cielo LIO deeplink integration, see:
-https://developercielo.github.io/manual/cielo-lio#integração-via-deep-link
+For more details about Cielo LIO deeplink integration:
+- https://developercielo.github.io/manual/cielo-lio#integração-via-deep-link
+- https://github.com/DeveloperCielo/LIO-SDK-Sample-Integracao-Local
 
 ## License
 

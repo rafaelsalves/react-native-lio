@@ -29,6 +29,56 @@ class LioDeepLinkModule(reactContext: ReactApplicationContext) :
     }
 
     /**
+     * Verifica se um package está instalado
+     */
+    private fun isPackageInstalled(packageManager: android.content.pm.PackageManager, packageName: String): Boolean {
+        return try {
+            packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Salva uma imagem Base64 no storage e retorna o caminho
+     * @param base64Image - String Base64 da imagem
+     * @param fileName - Nome do arquivo (sem extensão)
+     * @param promise - Promise que retorna o caminho do arquivo
+     */
+    @ReactMethod
+    fun saveBase64Image(base64Image: String, fileName: String, promise: Promise) {
+        try {
+            // Remove o prefixo data:image se existir
+            val base64Clean = base64Image.replace(Regex("^data:image/[a-z]+;base64,"), "")
+
+            // Decodifica o Base64
+            val imageBytes = Base64.decode(base64Clean, Base64.DEFAULT)
+
+            // Decodifica para Bitmap
+            val bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+
+            // Cria o diretório se não existir
+            val imagesDir = java.io.File(reactContext.getExternalFilesDir(null), "images")
+            if (!imagesDir.exists()) {
+                imagesDir.mkdirs()
+            }
+
+            // Salva a imagem como JPG
+            val imageFile = java.io.File(imagesDir, "$fileName.jpg")
+            val outputStream = java.io.FileOutputStream(imageFile)
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
+            outputStream.flush()
+            outputStream.close()
+
+            promise.resolve(imageFile.absolutePath)
+
+        } catch (e: Exception) {
+            promise.reject("SAVE_IMAGE_ERROR", "Erro ao salvar imagem: ${e.message}", e)
+        }
+    }
+
+    /**
      * Envia um intent via deeplink para a Cielo LIO
      * @param action - Ação a ser executada (ex: "payment", "payment-reversal", "print")
      * @param params - Parâmetros da requisição em formato de objeto
@@ -56,21 +106,30 @@ class LioDeepLinkModule(reactContext: ReactApplicationContext) :
             // Constrói a URI do deeplink
             val deeplinkUri = "lio://$action?request=$base64Params&urlCallback=$callbackScheme"
 
-            // Launch the deep link em background sem mostrar a UI
+            // Tenta primeiro com o package da LIO real, depois fallback
+            val packageManager = reactContext.packageManager
+            val targetPackage = when {
+                // Verifica se é máquina LIO real (tem o package novo)
+                isPackageInstalled(packageManager, "com.ads.lio.uriappclient") -> "com.ads.lio.uriappclient"
+                // Fallback para simulador/desenvolvimento (package antigo)
+                isPackageInstalled(packageManager, "br.com.cielosmart.orderservice") -> "br.com.cielosmart.orderservice"
+                else -> null
+            }
+
+            if (targetPackage == null) {
+                promise.reject("NO_HANDLER", "Nenhum aplicativo LIO encontrado. Verifique se o app Cielo LIO está instalado.")
+                return
+            }
+
+            // Launch the deep link
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 data = Uri.parse(deeplinkUri)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
-                `package` = "br.com.cielosmart.orderservice"
+                `package` = targetPackage
             }
 
-            // Verifica se existe algum app que pode lidar com este intent
-            val packageManager = reactContext.packageManager
-            if (intent.resolveActivity(packageManager) != null) {
-                reactContext.startActivity(intent)
-                promise.resolve(true)
-            } else {
-                promise.reject("NO_HANDLER", "Nenhum aplicativo encontrado para lidar com a requisição LIO")
-            }
+            reactContext.startActivity(intent)
+            promise.resolve(true)
 
         } catch (e: Exception) {
             promise.reject("SEND_INTENT_ERROR", "Erro ao enviar intent: ${e.message}", e)

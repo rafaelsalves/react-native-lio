@@ -2,11 +2,8 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="cielo.lio.permission.CASHLESS"/>
     <queries>
+        <package android:name="com.ads.lio.uriappclient" />
         <package android:name="br.com.cielosmart.orderservice" />
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="lio" />
-        </intent>
     </queries>
 
 </manifest>
