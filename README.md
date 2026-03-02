@@ -1,5 +1,8 @@
 # react-native-lio
 
+[![Version](https://img.shields.io/npm/v/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)
+[![NPM](https://img.shields.io/npm/dm/react-native-lio.svg)](https://www.npmjs.com/package/react-native-lio)
+
 React Native library for Cielo LIO deeplink integration. Supports payments, reversals, printing, device information, and order management.
 
 ## Features
@@ -187,7 +190,7 @@ module.exports = {
 ### Import
 
 ```typescript
-import Lio, { LioOrderStatus } from 'react-native-lio';
+import Lio, { LioOrderStatus, LioPaymentStatusCode } from 'react-native-lio';
 ```
 
 ### 1. Get Device Information
@@ -379,6 +382,14 @@ LioOrderStatus.CLOSED      // 'CLOSED'
 LioOrderStatus.RE_ENTERED  // 'RE-ENTERED'
 ```
 
+**Payment Status Codes:**
+
+```typescript
+LioPaymentStatusCode.PIX           // 0
+LioPaymentStatusCode.AUTHORIZATED  // 1
+LioPaymentStatusCode.CANCELED      // 2
+```
+
 ### 8. Save Base64 Image
 
 ```typescript
@@ -537,6 +548,13 @@ enum LioOrderStatus {
     DRAFT = 'DRAFT',
     CLOSED = 'CLOSED',
     RE_ENTERED = 'RE-ENTERED'
+}
+
+// Payment Status Codes
+enum LioPaymentStatusCode {
+    PIX = 0,
+    AUTHORIZATED = 1,
+    CANCELED = 2,
 }
 
 // Orders Response

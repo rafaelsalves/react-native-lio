@@ -3,7 +3,7 @@ export interface LioPaymentItem {
     id?: number;
     sku: string;
     name: string;
-    unit_price: number; // Preço unitário em centavos
+    unit_price: number; // Unit price in cents
     quantity: number;
     unitOfMeasure: string; // Ex: "EACH", "HOUR", "KILO"
 }
@@ -11,12 +11,12 @@ export interface LioPaymentItem {
 export interface LioPaymentParams {
     clientID?: string;
     accessToken?: string;
-    value: number; // Valor total em centavos (ex: 1000 = R$ 10,00)
-    items: LioPaymentItem[]; // Array de itens (obrigatório)
+    value: number; // Total value in cents (eg: 1000 = R$ 10.00)
+    items: LioPaymentItem[]; // Array of items (required)
     installments?: number;
     orderId?: string;
     email?: string;
-    paymentCode?: string;
+    paymentCode?: 'CREDITO_AVISTA' | 'DEBITO_AVISTA' | 'CREDITO_PARCELADO_LOJA';
     [key: string]: any;
 }
 
@@ -42,7 +42,7 @@ export interface LioPrintStyle {
     key_attributes_marginbottom?: number;
     key_attributes_linespace?: number;
     key_attributes_weight?: number;
-    form_feed?: 0 | 1; // 0 = sem espaçamento, 1 = com espaçamento
+    form_feed?: 0 | 1; // 0 = no spacing, 1 = with spacing
     [key: string]: any;
 }
 
@@ -51,7 +51,7 @@ export interface LioPrintParams {
     accessToken?: string;
     operation: 'PRINT_TEXT' | 'PRINT_IMAGE' | 'PRINT_MULTI_COLUMN_TEXT';
     styles?: LioPrintStyle[];
-    value: string[]; // Para PRINT_TEXT: array de strings | Para PRINT_IMAGE: [caminho_arquivo]
+    value: string[]; // For PRINT_TEXT: array of strings | For PRINT_IMAGE: [file_path]
     [key: string]: any;
 }
 
@@ -163,6 +163,13 @@ export interface LioResponse {
     success?: boolean;
     error?: string;
     [key: string]: any;
+}
+
+// Payment Response
+export interface LioPaymentResponse {
+    code: number; // 0 = success, other = error
+    reason: string;
+    data?: LioOrder;
 }
 
 // Callback Type

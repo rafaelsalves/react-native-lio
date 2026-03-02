@@ -13,13 +13,15 @@ import {
     type LioOrdersResponse,
     type LioResponse,
     type LioResponseCallback,
+    type LioOrder,
+    type LioPaymentResponse,
     LioOrderStatus,
 } from './types'
 
 const { LioDeepLink: LioDeepLinkNative } = NativeModules
 
 /**
- * Aplica credenciais padrão se não forem fornecidas
+ * Applies default credentials if not provided
  */
 function applyDefaultCredentials<T extends { clientID?: string; accessToken?: string }>(params: T): T {
     return {
@@ -43,10 +45,10 @@ class LioDeepLinkModule {
     }
 
     /**
-    * Obtém informações da máquina Cielo LIO
-    * @param params - Parâmetros com clientID e accessToken
-    * @param onResponse - Callback para receber a resposta com as informações do dispositivo
-    * @returns Promise<boolean> - true se o intent foi enviado com sucesso
+    * Gets Cielo LIO machine information
+    * @param params - Parameters with clientID and accessToken
+    * @param onResponse - Callback to receive the response with device information
+    * @returns Promise<boolean> - true if the intent was sent successfully
     */
     async getDeviceInfo(
         params: LioDeviceInfoParams = {}
@@ -71,20 +73,33 @@ class LioDeepLinkModule {
     }
 
     /**
-     * Envia uma requisição de pagamento via deeplink para a Cielo LIO
-     * @param params - Parâmetros do pagamento
-     * @param onResponse - Callback para receber a resposta
-     * @returns Promise<boolean> - true se o intent foi enviado com sucesso
+     * Sends a payment request via deeplink to Cielo LIO
+     * @param params - Payment parameters
+     * @param onResponse - Callback to receive the response
+     * @returns Promise<LioPaymentResponse> - Standardized response with code, reason and data
      */
     async sendPayment(
         params: LioPaymentParams
-    ): Promise<LioResponse> {
+    ): Promise<LioPaymentResponse> {
         const paramsWithDefaults = applyDefaultCredentials(params);
 
         return new Promise((resolve, reject) => {
-            const subscription = this.addResponseListener((content) => {
+            const subscription = this.addResponseListener((content: any) => {
                 this.removeListener(subscription);
-                resolve(content);
+
+                if (content && 'code' in content && 'reason' in content) {
+                    resolve({
+                        code: content.code,
+                        reason: content.reason,
+                        data: content
+                    });
+                } else {
+                    resolve({
+                        code: 0,
+                        reason: 'Pagamento realizado com sucesso',
+                        data: content as LioOrder
+                    });
+                }
             });
 
             LioDeepLinkNative.sendIntent(
@@ -99,10 +114,10 @@ class LioDeepLinkModule {
     }
 
     /**
-     * Envia uma requisição de cancelamento via deeplink para a Cielo LIO
-     * @param params - Parâmetros do cancelamento
-     * @param onResponse - Callback para receber a resposta
-     * @returns Promise<boolean> - true se o intent foi enviado com sucesso
+     * Sends a cancellation request via deeplink to Cielo LIO
+     * @param params - Cancellation parameters
+     * @param onResponse - Callback to receive the response
+     * @returns Promise<boolean> - true if the intent was sent successfully
      */
     async sendReversal(
         params: LioReversalParams
@@ -127,10 +142,10 @@ class LioDeepLinkModule {
     }
 
     /**
-     * Envia uma requisição de impressão via deeplink para a Cielo LIO
-     * @param params - Parâmetros da impressão
-     * @param onResponse - Callback para receber a resposta
-     * @returns Promise<boolean> - true se o intent foi enviado com sucesso
+     * Sends a print request via deeplink to Cielo LIO
+     * @param params - Print parameters
+     * @param onResponse - Callback to receive the response
+     * @returns Promise<boolean> - true if the intent was sent successfully
      */
     async sendPrint(
         params: LioPrintParams
@@ -155,19 +170,19 @@ class LioDeepLinkModule {
     }
 
     /**
-    * Salva uma imagem Base64 no storage e retorna o caminho do arquivo
-    * @param base64Image - String Base64 da imagem (com ou sem prefixo data:image)
-    * @param fileName - Nome do arquivo (sem extensão)
-    * @returns Promise<string> - Caminho absoluto do arquivo salvo
+    * Saves a Base64 image to storage and returns the file path
+    * @param base64Image - Base64 string of the image (with or without data:image prefix)
+    * @param fileName - File name (without extension)
+    * @returns Promise<string> - Absolute path of the saved file
     */
     async saveBase64Image(base64Image: string, fileName: string): Promise<string> {
         return LioDeepLinkNative.saveBase64Image(base64Image, fileName);
     }
 
     /**
-     * Obtém a lista de pedidos da Cielo LIO
-     * @param params - Parâmetros com clientID, accessToken e filtros opcionais
-     * @returns Promise<LioOrdersResponse> - Lista de pedidos filtrados por status (padrão: ['PAID'])
+     * Gets the list of orders from Cielo LIO
+     * @param params - Parameters with clientID, accessToken and optional filters
+     * @returns Promise<LioOrdersResponse> - List of orders filtered by status (default: ['PAID'])
      */
     async getOrders(
         params: LioOrdersParams = {}
@@ -212,9 +227,9 @@ class LioDeepLinkModule {
     }
 
     /**
-     * Adiciona um listener para receber respostas dos deeplinks
-     * @param callback - Função que será chamada quando receber uma resposta
-     * @returns EmitterSubscription - Subscrição que pode ser removida
+     * Adds a listener to receive responses from deeplinks
+     * @param callback - Function that will be called when receiving a response
+     * @returns EmitterSubscription - Subscription that can be removed
      */
     addResponseListener(callback: LioResponseCallback): EmitterSubscription {
         const subscription = this.eventEmitter.addListener(
@@ -226,7 +241,7 @@ class LioDeepLinkModule {
     }
 
     /**
-     * Remove todos os listeners de resposta
+     * Removes all response listeners
      */
     removeAllListeners(): void {
         this.listeners.forEach(listener => listener.remove());
@@ -234,8 +249,8 @@ class LioDeepLinkModule {
     }
 
     /**
-     * Remove um listener específico
-     * @param subscription - Subscrição retornada por addResponseListener
+     * Removes a specific listener
+     * @param subscription - Subscription returned by addResponseListener
      */
     removeListener(subscription: EmitterSubscription): void {
         subscription.remove();
