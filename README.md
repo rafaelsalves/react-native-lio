@@ -690,7 +690,7 @@ const loadMore = async () => {
     onEndReached={({ distanceFromEnd }) => {
         if (distanceFromEnd > 0) loadMore();
     }}
-/>
+/> 
 ```
 
 ## Official Documentation
